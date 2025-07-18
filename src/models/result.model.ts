@@ -20,7 +20,7 @@ const resultSchema = new mongoose.Schema<ResultDocument>(
 
     term_results: [
       {
-        _id: { type: mongoose.Schema.Types.ObjectId },
+        // _id: { type: mongoose.Schema.Types.ObjectId },
         term: {
           type: String,
           required: true,
@@ -33,10 +33,24 @@ const resultSchema = new mongoose.Schema<ResultDocument>(
             subject: { type: Schema.Types.ObjectId, ref: 'Subject' },
             subject_teacher: { type: Schema.Types.ObjectId, ref: 'Teacher' },
             total_score: { type: Number },
-            first_test_score: { type: Number, default: null }, // e.g., out of 20
-            second_test_score: { type: Number, default: null },
-            exam_score: { type: Number, default: null },
+            last_term_cumulative: { type: Number },
+            cumulative_average: { type: Number },
+            exam_object: [
+              {
+                key: { type: String, trim: true },
+                score_name: { type: String },
+                score: { type: Number, default: null },
+              },
+            ],
+            scores: [
+              {
+                key: { type: String, trim: true },
+                score_name: { type: String },
+                score: { type: Number, default: null },
+              },
+            ],
             grade: { type: String },
+            remark: { type: String },
             subject_position: { type: String },
           },
         ],

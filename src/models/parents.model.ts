@@ -11,6 +11,7 @@ const parentSchema = new mongoose.Schema<UserDocument>(
     phone: { type: String, required: true },
     email: { type: String, required: true },
     password: { type: String, required: true },
+    redundant: { type: Boolean, default: false },
     role: { type: String, enum: rolesEnum, default: rolesEnum[3] },
     is_verified: { type: Boolean, default: false },
     children: [

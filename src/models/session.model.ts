@@ -18,6 +18,7 @@ const sessionSchema = new mongoose.Schema<SessionDocument>(
     },
     is_active: { type: Boolean, default: false },
     is_promotion_done: { type: Boolean, default: false },
+    is_subscription_mail_sent: { type: Boolean, default: false },
   },
   {
     timestamps: true,

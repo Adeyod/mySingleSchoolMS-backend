@@ -15,6 +15,7 @@ const adminSchema = new mongoose.Schema<UserDocument>(
     password: { type: String, required: true },
     role: { type: String, enum: rolesEnum, default: rolesEnum[0] },
     is_verified: { type: Boolean, default: false },
+    redundant: { type: Boolean, default: false },
     status: {
       type: String,
       enum: teacherStatusEnum,

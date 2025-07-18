@@ -1,9 +1,9 @@
-import {
-  allBusStopsFromAddressDocument,
-  createBusStop,
-  createManyBusStops,
-  fetchBusStopById,
-} from '../services/address.service';
+// import {
+//   allBusStopsFromAddressDocument,
+//   createBusStop,
+//   createManyBusStops,
+//   fetchBusStopById,
+// } from '../services/address.service';
 import { AppError } from '../utils/app.error';
 import catchErrors from '../utils/tryCatch';
 
@@ -13,18 +13,18 @@ const addBusStopToDatabase = catchErrors(async (req, res) => {
     throw new AppError('Bus stop and group must be provided to continue.', 400);
   }
 
-  const result = await createBusStop(bus_stop, group);
+  // const result = await createBusStop(bus_stop, group);
 
-  if (!result) {
-    throw new AppError('Unable to add bus stop.', 400);
-  }
+  // if (!result) {
+  //   throw new AppError('Unable to add bus stop.', 400);
+  // }
 
-  return res.status(201).json({
-    message: 'Bus Stop added successfully.',
-    status: 201,
-    success: true,
-    bus_stop: result,
-  });
+  // return res.status(201).json({
+  //   message: 'Bus Stop added successfully.',
+  //   status: 201,
+  //   success: true,
+  //   bus_stop: result,
+  // });
 });
 
 const addManyBusStopsToDatabase = catchErrors(async (req, res) => {
@@ -33,18 +33,18 @@ const addManyBusStopsToDatabase = catchErrors(async (req, res) => {
     throw new AppError('Bus stop and group must be provided to continue.', 400);
   }
 
-  const result = await createManyBusStops(bus_stops, group);
+  // const result = await createManyBusStops(bus_stops, group);
 
-  if (!result) {
-    throw new AppError('Unable to add bus stop.', 400);
-  }
+  // if (!result) {
+  //   throw new AppError('Unable to add bus stop.', 400);
+  // }
 
-  return res.status(201).json({
-    message: 'Bus stops added successfully.',
-    status: 201,
-    success: true,
-    bus_stop: result,
-  });
+  // return res.status(201).json({
+  //   message: 'Bus stops added successfully.',
+  //   status: 201,
+  //   success: true,
+  //   bus_stop: result,
+  // });
 });
 
 const getBusStopsFromDatabase = catchErrors(async (req, res) => {
@@ -53,17 +53,17 @@ const getBusStopsFromDatabase = catchErrors(async (req, res) => {
   const searchQuery =
     typeof req.query.searchParams === 'string' ? req.query.searchParams : '';
 
-  const result = await allBusStopsFromAddressDocument(page, limit, searchQuery);
-  if (!result) {
-    throw new AppError('Unable to get bus stops.', 400);
-  }
+  // const result = await allBusStopsFromAddressDocument(page, limit, searchQuery);
+  // if (!result) {
+  //   throw new AppError('Unable to get bus stops.', 400);
+  // }
 
-  return res.status(200).json({
-    message: 'Bus Stops fetched successfully.',
-    success: true,
-    status: 200,
-    bus_stop: result,
-  });
+  // return res.status(200).json({
+  //   message: 'Bus Stops fetched successfully.',
+  //   success: true,
+  //   status: 200,
+  //   bus_stop: result,
+  // });
 });
 
 const getBusStopsByGroupingFromDatabase = catchErrors(async (req, res) => {});
@@ -76,18 +76,18 @@ const getBusStopFromDatabaseById = catchErrors(async (req, res) => {
     throw new AppError('Bus stop ID is required.', 400);
   }
 
-  const result = await fetchBusStopById(bus_stop_id, group);
+  // const result = await fetchBusStopById(bus_stop_id, group);
 
-  if (!result) {
-    throw new AppError('Unable to get bus stop.', 400);
-  }
+  // if (!result) {
+  //   throw new AppError('Unable to get bus stop.', 400);
+  // }
 
-  return res.status(200).json({
-    message: 'Bus Stop fetched successfully.',
-    success: true,
-    status: 200,
-    bus_stop: result,
-  });
+  // return res.status(200).json({
+  //   message: 'Bus Stop fetched successfully.',
+  //   success: true,
+  //   status: 200,
+  //   bus_stop: result,
+  // });
 });
 
 export {

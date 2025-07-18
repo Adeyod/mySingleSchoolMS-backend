@@ -1391,6 +1391,7 @@ type ResultSettingDocument = {
 type ScoreType = {
   score_name: string;
   score: number;
+  key?: string;
 };
 
 type ExamScoreType = ScoreType & { key: string };
@@ -1454,6 +1455,32 @@ type TermDocument = {
   start_date: Date;
   end_date: Date;
   is_active?: boolean;
+};
+
+type SubjectTermResult = {
+  term: string;
+  total_score: number;
+  last_term_cumulative: number;
+  cumulative_average: number;
+  exam_object: ExamScoreType[];
+  scores: ScoreType[];
+  subject_position: string;
+  grade?: string;
+  remark?: string;
+  // cumulative_score: number;
+  class_position: string;
+};
+
+type SubjectResultDocument = Document & {
+  enrolment: mongoose.Types.ObjectId;
+  student: mongoose.Types.ObjectId;
+  class: mongoose.Types.ObjectId;
+  session: mongoose.Types.ObjectId;
+  subject: mongoose.Types.ObjectId;
+  subject_teacher: mongoose.Types.ObjectId;
+  term_results: SubjectTermResult[];
+  createdAt: Date;
+  updatedAt: Date;
 };
 
 type SessionDocument = Document & {
@@ -2678,6 +2705,7 @@ export {
   AllStudentResultsPayloadType,
   OptionalFeeType,
   SubjectRemovalType,
+  SubjectResultDocument,
   SubjectAdditionType,
   MandatoryFeeType,
   StudentWalletObjType,

@@ -13,21 +13,6 @@ const subjectSchema = new mongoose.Schema(
     description: {
       type: String,
     },
-    stream: {
-      type: String,
-      enum: streamEnum,
-      required: false,
-    }, // Only for SSS
-
-    sections: {
-      type: [
-        {
-          tier: { type: String, enum: subjectTierEnum, required: true },
-          is_compulsory: { type: Boolean, required: true },
-        },
-      ],
-      required: true,
-    },
     class_ids: [
       {
         type: Schema.Types.ObjectId,

@@ -9,11 +9,9 @@ const superAdminSchema = new mongoose.Schema<UserDocument>(
     middle_name: { type: String },
     gender: { type: String, enum: genderEnum, required: true },
     phone: { type: String, required: true },
-    dob: { type: Date, required: true },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     role: { type: String, enum: rolesEnum, default: rolesEnum[4] },
-    employment_date: { type: Date },
     is_verified: { type: Boolean, default: false },
     status: {
       type: String,

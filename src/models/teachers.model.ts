@@ -13,6 +13,7 @@ const teacherSchema = new mongoose.Schema<UserDocument>(
     email: { type: String, required: true },
     role: { type: String, enum: rolesEnum, default: rolesEnum[2] },
     password: { type: String, required: true },
+    redundant: { type: Boolean, default: false },
     is_verified: { type: Boolean, default: false },
     is_updated: { type: Boolean, default: false },
     class_managing: { type: Schema.Types.ObjectId, ref: 'Class' },

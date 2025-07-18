@@ -8,15 +8,38 @@ const subjectScheduleSchema = new mongoose.Schema({
     ref: 'Subject',
     required: true,
   },
-  // subject_teacher: {
-  //   type: mongoose.Schema.Types.ObjectId,
-  //   ref: 'Teacher',
-  //   required: true,
-  // },
+  authorized_students: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Students',
+      _id: false,
+    },
+  ],
+  students_that_have_started: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Students',
+      _id: false,
+    },
+  ],
+  students_that_have_submitted: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Students',
+      _id: false,
+    },
+  ],
+  exam_subject_status: {
+    type: String,
+    enum: ['not_started', 'ongoing', 'ended', 'late_to_start'],
+    default: 'not_started',
+  },
   start_time: { type: Date, required: true },
   duration: { type: Number, required: true },
   theory_start_time: { type: Date },
   theory_duration: { type: Number },
+  is_subject_question_set: { type: Boolean, default: false },
+  has_subject_grace_period_ended: { type: Boolean, default: false },
 });
 
 const classExamTimetableSchema =
