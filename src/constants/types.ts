@@ -97,11 +97,6 @@
 
 // type VerificationDocument = Document & Partial<VerificationType>;
 
-// type PaystackPayloadType = {
-//   reference: string;
-//   student_id: string;
-// };
-
 // type UserWithoutPassword = Omit<UserDocument, 'password'>;
 
 // type UserDocument = UserObj & {
@@ -531,15 +526,6 @@
 // type AddressValidationType = {
 //   home_address: string;
 //   close_bus_stop: string;
-// };
-
-// type PaystackSchoolPaymentType = {
-//   student_id: string;
-//   student_email: string;
-//   amount: number;
-//   session_id: string;
-//   term: string;
-//   payment_document_id: object;
 // };
 
 // type ApproveStudentPayloadType = {
@@ -2241,7 +2227,7 @@ type CustomerCreationPayloadType = {
   student_email: string;
   student_first_name: string;
   student_last_name: string;
-  student_school_id: string;
+  student_school_name: string;
   student_id: string;
 };
 
@@ -2666,7 +2652,23 @@ type ClassMapDocType = {
   class_teacher?: Types.ObjectId | null;
 };
 
+type PaystackPayloadType = {
+  reference: string;
+  student_id: string;
+};
+
+type PaystackSchoolPaymentType = {
+  student_id: string;
+  student_email: string;
+  amount: number;
+  session_id: string;
+  term: string;
+  payment_document_id: object;
+};
+
 export {
+  PaystackPayloadType,
+  PaystackSchoolPaymentType,
   ExamEndedType,
   ExamUpdateType,
   ExamAuthorizationPayloadType,

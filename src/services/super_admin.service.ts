@@ -13,27 +13,13 @@ const cutoffMinutesCreation = async (payload: CutoffMinutesCreationPayload) => {
     const { first_cutoff_minutes, last_cutoff_minutes, school_id } = payload;
     const school = Object(school_id);
 
-    const schoolExist = await School.findById({
-      _id: school,
-    });
-
-    if (!schoolExist) {
-      throw new AppError('School not found.', 404);
-    }
-
-    const cutoffExist = await CbtCutoff.findOne({
-      school: schoolExist._id,
-    });
+    const cutoffExist = await CbtCutoff.find();
 
     if (cutoffExist) {
-      throw new AppError(
-        `${schoolExist.school_name} already has cutoff recorded.`,
-        400
-      );
+      throw new AppError(`Cutoff time not found.`, 400);
     }
 
     const newCutoff = new CbtCutoff({
-      school: schoolExist._id,
       first_cutoff_minutes: first_cutoff_minutes,
       last_cutoff_minutes: last_cutoff_minutes,
     });
