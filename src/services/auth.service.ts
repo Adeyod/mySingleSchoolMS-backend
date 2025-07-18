@@ -33,7 +33,7 @@ import { AppError } from '../utils/app.error';
 import { sendEmailVerification } from '../utils/nodemailer';
 import { object } from 'joi';
 import { capitalizeFirstLetter } from '../utils/functions';
-import { queue } from '../utils/queue';
+import { emailQueue } from '../utils/queue';
 import {
   generateAccessToken,
   generateRefreshToken,
@@ -86,7 +86,7 @@ const registerNewUser = async (payload: UserDocument) => {
       type: 'email-verification',
     };
 
-    const mailSent = await queue.add('sendEmail', jobData, {
+    const mailSent = await emailQueue.add('sendEmail', jobData, {
       attempts: 3,
       backoff: 10000,
       removeOnComplete: true,
@@ -222,7 +222,7 @@ const userLogin = async (
           type: 'email-verification',
         };
 
-        const mailSent = await queue.add('sendEmail', jobData, {
+        const mailSent = await emailQueue.add('sendEmail', jobData, {
           attempts: 3,
           backoff: 10000,
           removeOnComplete: true,
@@ -240,7 +240,7 @@ const userLogin = async (
           type: 'email-verification',
         };
 
-        const mailSent = await queue.add('sendEmail', jobData, {
+        const mailSent = await emailQueue.add('sendEmail', jobData, {
           attempts: 3,
           backoff: 10000,
           removeOnComplete: true,
@@ -372,7 +372,7 @@ const forgotPass = async (email: string): Promise<UserDocument> => {
           type: 'forgot-password',
         };
 
-        const mailSent = await queue.add('sendEmail', jobData, {
+        const mailSent = await emailQueue.add('sendEmail', jobData, {
           attempts: 3,
           backoff: 10000,
           removeOnComplete: true,
@@ -386,7 +386,7 @@ const forgotPass = async (email: string): Promise<UserDocument> => {
         type: 'forgot-password',
       };
 
-      const mailSent = await queue.add('sendEmail', jobData, {
+      const mailSent = await emailQueue.add('sendEmail', jobData, {
         attempts: 3,
         backoff: 10000,
         removeOnComplete: true,
@@ -446,7 +446,7 @@ const sendingEmailVerificationToken = async (
       type: 'email-verification',
     };
 
-    const mailSent = await queue.add('sendEmail', jobData, {
+    const mailSent = await emailQueue.add('sendEmail', jobData, {
       attempts: 3,
       backoff: 10000,
       removeOnComplete: true,

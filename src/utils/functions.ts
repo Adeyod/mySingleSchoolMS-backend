@@ -331,7 +331,7 @@ import {
   UserDocument,
 } from '../constants/types';
 import { AppError } from './app.error';
-import { queue } from './queue';
+import { emailQueue } from './queue';
 
 const capitalizeFirstLetter = (payload: string) => {
   const value = payload.charAt(0).toUpperCase() + payload.slice(1);
@@ -370,7 +370,7 @@ const sendingEmailToQueue = async (
       message,
     };
 
-    const mailSent = await queue.add('sendEmail', jobData, {
+    const mailSent = await emailQueue.add('sendEmail', jobData, {
       attempts: 3,
       backoff: 10000,
       removeOnComplete: true,
@@ -406,7 +406,7 @@ const sendingCompanyEmailToQueue = async (
       type: type,
     };
 
-    const mailSent = await queue.add('sendEmail', jobData, {
+    const mailSent = await emailQueue.add('sendEmail', jobData, {
       attempts: 3,
       backoff: 10000,
       removeOnComplete: true,

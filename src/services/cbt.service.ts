@@ -15,6 +15,7 @@ import {
   ExamTimeUpdateType,
   ExamEndedType,
   GetClassExamTimetablePayloadType,
+  UserDocument,
 } from '../constants/types';
 import CbtCutoff from '../models/cbt_cutoffs.model';
 import CbtExam from '../models/cbt_exam.model';
@@ -31,6 +32,9 @@ import Subject from '../models/subject.model';
 import Teacher from '../models/teachers.model';
 import { AppError } from '../utils/app.error';
 import { capitalizeFirstLetter, formatDate } from '../utils/functions';
+import SuperAdmin from '../models/super_admin.model';
+import Admin from '../models/admin.model';
+import { SubjectResult } from '../models/subject_result.model';
 
 const termExamDocumentCreation = async (payload: ExamDocumentCreationType) => {
   try {
@@ -264,11 +268,18 @@ const termClassExamTimetableCreation = async (
   payload: ClassExamTimetablePayloadType
 ) => {
   try {
-    const { academic_session_id, class_id, teacher_id, term, timetable } =
-      payload;
+    const {
+      academic_session_id,
+      class_id,
+      user_id,
+      userRole,
+      term,
+      timetable,
+    } = payload;
 
     const classId = Object(class_id);
     const academicSessionId = Object(academic_session_id);
+    const userId = Object(user_id);
 
     const uniquesSubjectId = new Set();
     const duplicateSubjectId = new Set();
@@ -305,6 +316,24 @@ const termClassExamTimetableCreation = async (
       timeSlot.add(key);
     }
 
+    let userExist: UserDocument | null = null;
+
+    if (userRole === 'super_admin') {
+      userExist = await SuperAdmin.findById({
+        _id: userId,
+      });
+    } else if (userRole === 'admin') {
+      userExist = await Admin.findById({
+        _id: userId,
+      });
+    } else {
+      throw new AppError('Invalid user role.', 400);
+    }
+
+    if (!userExist || userExist === null) {
+      throw new AppError('User not found.', 400);
+    }
+
     const academicSessionExist = await Session.findById(academicSessionId);
 
     if (!academicSessionExist) {
@@ -331,13 +360,6 @@ const termClassExamTimetableCreation = async (
 
     if (!classExist) {
       throw new AppError('Class does not exist.', 404);
-    }
-
-    if (classExist.class_teacher?.toString() !== teacher_id.toString()) {
-      throw new AppError(
-        `You are not the class teacher of ${classExist.name}.`,
-        403
-      );
     }
 
     const classEnrolmentExist = await ClassEnrolment.findOne({
@@ -1291,14 +1313,30 @@ const subjectCbtObjExamStarting = async (payload: ExamStartingType) => {
       );
     }
 
-    const studentAlreadyInside =
-      findSubjectTimetable.students_that_have_started.includes(
-        result.student_id
-      );
+    // const studentAlreadyInside =
+    //   findSubjectTimetable.students_that_have_started.includes(
+    //     result.student_id
+    //   );
 
-    if (!studentAlreadyInside) {
-      findSubjectTimetable.students_that_have_started.push(result.student_id);
-    }
+    // if (!studentAlreadyInside) {
+    //   findSubjectTimetable.students_that_have_started.push(result.student_id);
+    // }
+
+    await ClassExamTimetable.updateOne(
+      {
+        academic_session_id: academicSessionExist._id,
+        class_id: classExist._id,
+        term: term,
+        exam_id: exam.exam_id,
+        'scheduled_subjects.subject_id': subject_id,
+      },
+      {
+        $addToSet: {
+          'scheduled_subjects.$.students_that_have_started': result.student_id,
+        },
+      },
+      { session }
+    );
 
     const returnObj = {
       others: {
@@ -1628,9 +1666,10 @@ const subjectCbtObjExamSubmission = async (payload: ExamEndedType) => {
       level: result.level,
     }).session(session);
 
-    const objKeyName = resultSettings?.exam_components.component.find(
-      (k) => k.key === examKeyEnum[0]
-    );
+    const exam_component_name = resultSettings?.exam_components.exam_name;
+    const exam_components = resultSettings?.exam_components.component;
+
+    const objKeyName = exam_components?.find((k) => k.key === examKeyEnum[0]);
 
     if (!objKeyName?.percentage || !objKeyName?.name) {
       throw new AppError(
@@ -1669,15 +1708,22 @@ const subjectCbtObjExamSubmission = async (payload: ExamEndedType) => {
      * TERM(SAME AS ABOVE)
      */
 
-    const mainResult = await Result.findOne({
-      student: studentExist._id,
+    // Find subject result here also and update it as well
+    const studentSubjectResult = await SubjectResult.findOne({
       enrolment: result.enrolment,
+      student: studentExist._id,
       class: result.class_id,
-      academic_session_id: result.academic_session_id,
+      session: result.academic_session_id,
+      subject: result.subject_id,
     }).session(session);
 
-    let termExistInResultDoc = mainResult?.term_results.find(
-      (t) => t.term === result.term
+    const termResult = studentSubjectResult?.term_results.find(
+      (a) => a.term === result.term
+    );
+
+    const alreadyHasExam = termResult?.scores.find(
+      (score) =>
+        score.score_name.toLowerCase() === exam_component_name?.toLowerCase()
     );
 
     const examObj = {
@@ -1696,6 +1742,34 @@ const subjectCbtObjExamSubmission = async (payload: ExamEndedType) => {
       exam_object: [examObj],
       subject_position: '',
     };
+
+    if (alreadyHasExam) {
+      console.log('Student already has exam result recorded.');
+    }
+
+    const hasRecordedExamScore = termResult?.exam_object.find(
+      (s) => s.score_name.toLowerCase() === examObj.score_name.toLowerCase()
+    );
+    if (hasRecordedExamScore) {
+      console.log(
+        `Score for ${examObj.score_name} has been recorded for this student.`
+      );
+    }
+
+    termResult?.scores.push(examObj);
+    termResult?.exam_object.push(examObj);
+    studentSubjectResult?.markModified('term_results');
+
+    const mainResult = await Result.findOne({
+      student: studentExist._id,
+      enrolment: result.enrolment,
+      class: result.class_id,
+      academic_session_id: result.academic_session_id,
+    }).session(session);
+
+    let termExistInResultDoc = mainResult?.term_results.find(
+      (t) => t.term === result.term
+    );
 
     if (!termExistInResultDoc) {
       termExistInResultDoc = {
@@ -1730,6 +1804,10 @@ const subjectCbtObjExamSubmission = async (payload: ExamEndedType) => {
 
     await result.save({ session });
 
+    if (studentSubjectResult) {
+      await studentSubjectResult.save({ session });
+    }
+
     if (mainResult) {
       await mainResult.save({ session });
     }
@@ -1759,22 +1837,25 @@ const subjectCbtObjExamSubmission = async (payload: ExamEndedType) => {
       );
     }
 
-    const studentAlreadyInside =
-      findSubjectTimetable.students_that_have_started.includes(
-        result.student_id
-      );
-
-    if (studentAlreadyInside) {
-      findSubjectTimetable.students_that_have_started =
-        findSubjectTimetable.students_that_have_started.filter(
-          (a) => a._id.toString() !== result.student_id.toString()
-        );
-
-      findSubjectTimetable.students_that_have_submitted.push(result.student_id);
-      actualExamTimeTable.markModified('scheduled_subjects');
-    }
-
-    await actualExamTimeTable.save({ session });
+    await ClassExamTimetable.updateOne(
+      {
+        academic_session_id: result.academic_session_id,
+        class_id: result.class_id,
+        term: result.term,
+        exam_id: result.exam_id,
+        'scheduled_subjects.subject_id': result.subject_id,
+      },
+      {
+        $pull: {
+          'scheduled_subjects.$.students_that_have_started': result.student_id,
+        },
+        $addToSet: {
+          'scheduled_subjects.$.students_that_have_submitted':
+            result.student_id,
+        },
+      },
+      { session }
+    );
 
     await session.commitTransaction();
     session.endSession();
@@ -1932,8 +2013,6 @@ const theoryQestionSetting = async (
 };
 
 export {
-  fetchExamDocumentById,
-  fetchAllClassExamTimetables,
   subjectCbtObjExamRemainingTimeUpdate,
   fetchTermClassExamTimetable,
   subjectCbtObjExamSubmission,
@@ -1945,5 +2024,7 @@ export {
   objQestionSetting,
   theoryQestionSetting,
   fetchTermExamDocument,
+  fetchExamDocumentById,
+  fetchAllClassExamTimetables,
   fetchAllExamDocument,
 };

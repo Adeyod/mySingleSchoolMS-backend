@@ -2026,11 +2026,15 @@ type StudentScoreObj = {
 
 type StudentExamScoreObj = {
   student_id: string;
-  score_array: {
-    score_name: string;
-    score_value: number;
-  }[];
+  score: number;
 };
+// type StudentExamScoreObj = {
+//   student_id: string;
+//   score_array: {
+//     score_name: string;
+//     score_value: number;
+//   }[];
+// };
 
 type MultipleScoreParamType = {
   term: string;
@@ -2432,9 +2436,11 @@ type GetClassExamTimetablePayloadType = {
 
 type ClassExamTimetablePayloadType = {
   // exam_id: string;
+
+  userRole: string;
   academic_session_id: string;
   class_id: string;
-  teacher_id: mongoose.Types.ObjectId;
+  user_id: mongoose.Types.ObjectId;
   term: string;
   timetable: TimetableArrayType;
 };
@@ -2666,7 +2672,50 @@ type PaystackSchoolPaymentType = {
   payment_document_id: object;
 };
 
+type ResultCommonJobData = {
+  term: string;
+  session_id: string;
+  teacher_id: string;
+  subject_id: string;
+  class_enrolment_id: string;
+  class_id: string;
+  student_id: string;
+};
+
+type ResultJobData = ResultCommonJobData & {
+  score: number;
+  score_name: string;
+};
+
+type ExamJobData = ResultCommonJobData & {
+  resultObj: ExamScoreType;
+  exam_component_name: string;
+  term_results: SubjectTermResult[];
+};
+
+type SubjectPositionAndCumCommon = {
+  term: string;
+  student_id: string;
+  subject_id: mongoose.Types.ObjectId;
+  class_id: mongoose.Types.ObjectId;
+  class_enrolment_id: mongoose.Types.ObjectId;
+  session_id: mongoose.Types.ObjectId;
+};
+
+type SubjectPositionJobData = SubjectPositionAndCumCommon & {
+  subject_position: string;
+};
+
+type SubjectCumScoreJobData = SubjectPositionAndCumCommon & {
+  actual_term_result: SubjectTermResult;
+};
+
 export {
+  ExamScoreType,
+  ResultJobData,
+  ExamJobData,
+  SubjectPositionJobData,
+  SubjectCumScoreJobData,
   PaystackPayloadType,
   PaystackSchoolPaymentType,
   ExamEndedType,
@@ -2816,6 +2865,7 @@ export {
   SchoolCreationPayloadType,
   FilePath,
   FolderName,
+  SubjectTermResult,
   CloudinaryType,
   SchoolCreationValidationType,
   SchoolType,

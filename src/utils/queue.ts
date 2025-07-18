@@ -8,9 +8,21 @@ import {
   sendPasswordReset,
   sendStudentSessionNotification,
 } from './nodemailer';
-import { EmailJobData } from '../constants/types';
+import {
+  EmailJobData,
+  ExamJobData,
+  ResultJobData,
+  SubjectCumScoreJobData,
+  SubjectPositionJobData,
+} from '../constants/types';
 import { ExpressAdapter } from '@bull-board/express';
 import { createBullBoard } from '@bull-board/api';
+import {
+  processStudentExamResultUpdate,
+  processStudentResultUpdate,
+  processStudentSubjectPositionUpdate,
+  processSubjectCumScoreUpdate,
+} from '../repository/result.repository';
 
 const redisUrl = process.env.REDIS_URL;
 
@@ -32,9 +44,9 @@ const redisOptions: RedisOptions = {
 
 const connection = new Redis(redisOptions);
 
-const queue = new Queue('emailQueue', { connection });
+const emailQueue = new Queue('emailQueue', { connection });
 
-const worker = new Worker<EmailJobData>(
+const emailWorker = new Worker<EmailJobData>(
   'emailQueue',
   async (job: Job<EmailJobData>) => {
     const {
@@ -107,11 +119,41 @@ const worker = new Worker<EmailJobData>(
   { connection }
 );
 
-worker.on('completed', (job) => {
+const studentResultQueue = new Queue('studentResultQueue', { connection });
+const resultWorker = new Worker<
+  ResultJobData | ExamJobData | SubjectPositionJobData | SubjectCumScoreJobData
+>(
+  'studentResultQueue',
+  async (job) => {
+    switch (job.name) {
+      case 'update-student-result':
+        await processStudentResultUpdate(job.data as ResultJobData);
+
+        break;
+      case 'update-student-exam':
+        await processStudentExamResultUpdate(job.data as ExamJobData);
+        break;
+      case 'subject-position':
+        await processStudentSubjectPositionUpdate(
+          job.data as SubjectPositionJobData
+        );
+        break;
+      case 'update-cum-score':
+        await processSubjectCumScoreUpdate(job.data as SubjectCumScoreJobData);
+        break;
+
+      default:
+        throw new Error(`Unknown job type: ${job.name}`);
+    }
+  },
+  { connection, concurrency: 100, maxStalledCount: 2, lockDuration: 30000 }
+);
+
+emailWorker.on('completed', (job) => {
   console.log(`Job ${job.id} has been completed`);
 });
 
-worker.on('failed', (job: Job<EmailJobData> | undefined, err: Error) => {
+emailWorker.on('failed', (job: Job<EmailJobData> | undefined, err: Error) => {
   if (job) {
     console.error(`Job ${job.id} failed with error: ${err.message}`);
   } else {
@@ -119,12 +161,51 @@ worker.on('failed', (job: Job<EmailJobData> | undefined, err: Error) => {
   }
 });
 
+resultWorker.on('active', (job) => {
+  console.log(
+    `Processing Job ID ${job.id} | Attempt ${job.attemptsMade + 1} of ${
+      job.opts.attempts ?? 1
+    }`
+  );
+});
+resultWorker.on('completed', (job) => {
+  console.log(`Job ${job.id} has been completed`);
+});
+
+resultWorker.on(
+  'failed',
+  (
+    job:
+      | Job<
+          | ResultJobData
+          | ExamJobData
+          | SubjectPositionJobData
+          | SubjectCumScoreJobData
+        >
+      | undefined,
+    err: Error
+  ) => {
+    if (job) {
+      console.error(
+        `Job ${job.id} failed on attempt ${job.attemptsMade + 1} with error: ${
+          err.message
+        }`
+      );
+    } else {
+      console.error(`failed to process job due to error: ${err.message}`);
+    }
+  }
+);
+
 const serverAdapter = new ExpressAdapter();
 createBullBoard({
-  queues: [new BullMQAdapter(queue)],
+  queues: [
+    new BullMQAdapter(emailQueue),
+    new BullMQAdapter(studentResultQueue),
+  ],
   serverAdapter,
 });
 
 serverAdapter.setBasePath('/bull-board');
 
-export { queue, worker, serverAdapter };
+export { emailQueue, studentResultQueue, emailWorker, serverAdapter };

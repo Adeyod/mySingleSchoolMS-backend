@@ -239,9 +239,10 @@ const createTermClassExamTimetable = catchErrors(async (req, res) => {
   const { academic_session_id, class_id } = req.params;
   const { term, timetable_array } = req.body;
 
-  const teacher_id = req.user?.userId;
+  const user_id = req.user?.userId;
+  const userRole = req.user?.userRole;
 
-  if (!teacher_id) {
+  if (!user_id || !userRole) {
     throw new AppError('Please login to continue.', 400);
   }
 
@@ -271,9 +272,10 @@ const createTermClassExamTimetable = catchErrors(async (req, res) => {
   const payload = {
     academic_session_id,
     class_id,
-    teacher_id,
     term,
     timetable: validateTimetableArray.value,
+    user_id,
+    userRole,
   };
 
   const result = await termClassExamTimetableCreation(payload);

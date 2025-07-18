@@ -736,7 +736,7 @@ import {
   schoolStateHandCoded,
   sendingEmailToQueue,
 } from '../utils/functions';
-import { queue } from '../utils/queue';
+import { emailQueue } from '../utils/queue';
 import Class from '../models/class.model';
 import { schoolBusValidation } from '../utils/validation';
 
@@ -1320,7 +1320,7 @@ const newSessionStudentsSubscription = async (): Promise<
         country: schoolCountryHandCoded,
         option: 'student',
       };
-      const mailSent = await queue.add('sendMail', studentJobData, {
+      const mailSent = await emailQueue.add('sendMail', studentJobData, {
         attempts: 3,
         backoff: 10000,
         removeOnComplete: true,
@@ -1349,7 +1349,7 @@ const newSessionStudentsSubscription = async (): Promise<
           academic_session: activeSession.academic_session,
         };
 
-        const mailSent = await queue.add('sendMail', parentJobData, {
+        const mailSent = await emailQueue.add('sendMail', parentJobData, {
           attempts: 3,
           backoff: 10000,
           removeOnComplete: true,
