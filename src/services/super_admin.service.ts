@@ -10,8 +10,7 @@ import { AppError } from '../utils/app.error';
 
 const cutoffMinutesCreation = async (payload: CutoffMinutesCreationPayload) => {
   try {
-    const { first_cutoff_minutes, last_cutoff_minutes, school_id } = payload;
-    const school = Object(school_id);
+    const { first_cutoff_minutes, last_cutoff_minutes } = payload;
 
     const cutoffExist = await CbtCutoff.find();
 

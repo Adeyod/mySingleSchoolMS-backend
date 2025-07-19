@@ -205,8 +205,8 @@ const createCutoffMinutes = catchErrors(async (req, res) => {
 export {
   createResultSetting,
   createCutoffMinutes,
-  // addPrincipalSignAndDate,
   createClassLevels,
+  // addPrincipalSignAndDate,
   // addLogo,
   // addSchoolImage,
 };
