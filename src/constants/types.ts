@@ -1350,19 +1350,30 @@ type ResultSettingComponentType = {
   column: number;
 };
 
-type ExamComponentType = {
-  exam_name: string;
-  component: {
-    key: string;
-    name: string;
-    percentage: number;
-  }[];
-};
+// type ExamComponentType = {
+//   exam_name: string;
+//   component: {
+//     key: string;
+//     name: string;
+//     percentage: number;
+//   }[];
+// };
 
 type GradingAndRemarkType = {
   value: number;
   grade: string;
   remark: string;
+};
+
+type ExamComponentObjectType = {
+  key: string;
+  name: string;
+  percentage: number;
+};
+
+type ExamComponentType = {
+  exam_name: string;
+  component: ExamComponentObjectType[];
 };
 
 type ResultSettingDocument = {
@@ -2295,7 +2306,7 @@ type ClassPositionCalType = {
 };
 
 type ClassLevelCreationPayloadType = {
-  school_id: string;
+  // school_id: string;
   class_level_array: string[];
 };
 
@@ -2568,9 +2579,7 @@ type CbtCutoffPayload = {
   last_cutoff_minutes: number;
 };
 
-type CutoffMinutesCreationPayload = CbtCutoffPayload & {
-  school_id: string;
-};
+type CutoffMinutesCreationPayload = CbtCutoffPayload;
 
 type LogDocument = Document & {
   level: string;
@@ -2779,6 +2788,7 @@ export {
   StudentResultTermType,
   SubjectPopulatedType,
   GetTeacherByIdType,
+  ExamComponentType,
   GetStudentByIdType,
   SingleStudentScorePayload,
   StudentPopulatedType,

@@ -28,6 +28,7 @@ import studentRoute from './routes/student.route';
 import parentRoute from './routes/parent.route';
 import oldStudentRoute from './routes/old_student.route';
 import jobRoute from './routes/job.route';
+import schoolRoute from './routes/school.route';
 import addressRoute from './routes/address.route';
 import subjectRoute from './routes/subject.route';
 import teacherRoute from './routes/teacher.route';
@@ -95,6 +96,7 @@ app.use('/api/v1/cbt', cbtRoute);
 app.use('/api/v1/non-teaching', nonTeachingRoute);
 app.use('/api/v1/notifications', notificationRoute);
 app.use('/api/v1/super-admin', superAdminRoute);
+app.use('/api/v1/school', schoolRoute);
 
 app.use('/admin/queues', serverAdapter.getRouter());
 app.use(errorHandler);

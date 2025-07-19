@@ -27,7 +27,7 @@ router.get(
 );
 
 router.get(
-  '/get-all-class-subjects-in-school/:class_id',
+  '/get-all-class-subjects/:class_id',
   permission(['admin', 'super_admin']),
   getAllClassSubjectsByClassId
 );
