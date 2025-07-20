@@ -7,7 +7,7 @@ import {
   getAClassById,
   addSubjectsToAClass,
   removeSubjectsToAClass,
-  getMySchoolClassLevel,
+  getSchoolClassLevel,
 } from '../controllers/class.controller';
 
 const router = express.Router();
@@ -20,9 +20,9 @@ router.put(
 );
 
 router.get(
-  '/get-my-school-class-level',
+  '/get-school-class-level',
   permission(['admin', 'super_admin', 'parent', 'student', 'teacher']),
-  getMySchoolClassLevel
+  getSchoolClassLevel
 );
 
 router.delete(

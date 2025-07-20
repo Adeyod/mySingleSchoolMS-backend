@@ -126,6 +126,7 @@ import {
   ClassDocument,
   GetClassPayloadType,
   SubjectAdditionType,
+  SubjectDocument,
   SubjectRemovalType,
 } from '../constants/types';
 import Class from '../models/class.model';
@@ -143,7 +144,7 @@ const classCreation = async (
       name,
       description,
       level,
-      arms,
+      // arms,
       // streams,
       compulsory_subjects,
       // optional_subjects,
@@ -190,9 +191,7 @@ const classCreation = async (
 
     if (invalidSubjects?.length > 0) {
       throw new AppError(
-        `The following compulsory subjects are not found: ${invalidSubjects.join(
-          ', '
-        )}`,
+        `The following subjects are not found: ${invalidSubjects.join(', ')}`,
         404
       );
     }
@@ -221,7 +220,7 @@ const classCreation = async (
       name,
       description,
       level,
-      arms,
+      // arms,
       // streams,
       section,
       compulsory_subjects: compulsorySubjectsIds,
@@ -332,7 +331,23 @@ const subjectsAdditionToAClass = async (payload: SubjectAdditionType) => {
       subjectObjectIds.some((id) => id.equals(subject))
     );
 
-    console.log('invalidSubjects:', invalidSubjects);
+    const allSubjects = (await Subject.find({
+      _id: { $in: subjectObjectIds },
+    })) as SubjectDocument[];
+
+    const filteredSubjects = subjectObjectIds.filter(
+      (id) =>
+        !allSubjects.some((subject) => subject._id.toString() === id.toString())
+    );
+
+    if (filteredSubjects.length > 0) {
+      throw new AppError(
+        `The following subject IDs: ${filteredSubjects.join(
+          ', '
+        )} are not found.`,
+        400
+      );
+    }
 
     if (invalidSubjects.length > 0) {
       throw new AppError(

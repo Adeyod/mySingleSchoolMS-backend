@@ -125,7 +125,7 @@ const createAClass = catchErrors(async (req, res) => {
     name,
     description: value.description.toLowerCase(),
     level,
-    arms,
+    // arms,
     // streams,
     compulsory_subjects,
     // optional_subjects,
@@ -359,13 +359,13 @@ const removeSubjectsToAClass = catchErrors(async (req, res) => {
   });
 });
 
-const getMySchoolClassLevel = catchErrors(async (req, res) => {
+const getSchoolClassLevel = catchErrors(async (req, res) => {
   // const start = Date.now();
 
   const result = await fetchMySchoolClassLevel();
 
   if (!result) {
-    throw new AppError('Unable to fetch class level for this school.', 400);
+    throw new AppError('Unable to fetch class level.', 400);
   }
 
   // const duration = Date.now() - start;
@@ -398,7 +398,7 @@ const getMySchoolClassLevel = catchErrors(async (req, res) => {
 });
 
 export {
-  getMySchoolClassLevel,
+  getSchoolClassLevel,
   removeSubjectsToAClass,
   addSubjectsToAClass,
   createAClass,

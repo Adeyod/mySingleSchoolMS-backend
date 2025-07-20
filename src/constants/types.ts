@@ -1543,7 +1543,7 @@ type ClassCreationType = {
   level: string;
   section: string;
   description: string;
-  arms: string[];
+  // arms: string[];
   // streams: string[];
   compulsory_subjects: string[];
   // optional_subjects: string[];
@@ -1560,7 +1560,7 @@ type ClassDocument = Document & {
   level: string;
   section: string;
   description?: string;
-  arms: string[];
+  // arms: string[];
   compulsory_subjects: mongoose.Types.ObjectId[];
   class_teacher?: mongoose.Types.ObjectId;
   teacher_subject_assignments: TeacherSubjectAssignment[];
@@ -1968,20 +1968,6 @@ type TeacherToSubjectType = {
   class_id: string;
   teacher_id: string;
   // school_id: string;
-};
-
-type SubjectDocument = {
-  _id: ObjectId;
-  name: string;
-  code: string;
-  description: string;
-  stream: string;
-  sections: {
-    tier: string;
-    is_compulsory: boolean;
-  }[];
-  class_ids: mongoose.Types.ObjectId[];
-  teacher_ids: mongoose.Types.ObjectId[];
 };
 
 type OnboardTeacherType = {
@@ -2717,6 +2703,15 @@ type SubjectPositionJobData = SubjectPositionAndCumCommon & {
 
 type SubjectCumScoreJobData = SubjectPositionAndCumCommon & {
   actual_term_result: SubjectTermResult;
+};
+
+type SubjectDocument = Document & {
+  _id: mongoose.Types.ObjectId;
+  name: string;
+  code: string;
+  description: string;
+  class_ids: mongoose.Types.ObjectId[];
+  teacher_ids: mongoose.Types.ObjectId[];
 };
 
 export {

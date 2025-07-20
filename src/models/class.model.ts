@@ -8,7 +8,7 @@ const classSchema = new mongoose.Schema<ClassDocument>(
     level: { type: String, required: true }, // Level (JSS 1, JSS 2, etc)
     section: { type: String, required: true }, // Section(A, B, C etc)
     description: { type: String },
-    arms: [{ type: String }],
+    // arms: [{ type: String }],
     // streams: [{ type: String, enum: streamEnum }],
     class_teacher: { type: Schema.Types.ObjectId, ref: 'Teacher' },
     compulsory_subjects: [

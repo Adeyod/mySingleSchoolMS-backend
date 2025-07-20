@@ -102,7 +102,6 @@ const mandatedSuperAdmins = [
   'agbetuyiolawande@gmail.com',
   'topzyray009@gmail.com',
 ];
-// const companyRoles = ['super_admin'];
 const testTypeEnum = ['first_test', 'second_test', 'exam'];
 const enrolmentEnum = ['enrolled', 'completed', 'to_repeat'];
 const attendanceEnum = ['present', 'absent'];

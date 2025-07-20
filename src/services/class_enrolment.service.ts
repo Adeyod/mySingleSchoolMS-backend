@@ -18,7 +18,14 @@ const enrolStudentToClass = async (
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
-    const { student_id, class_id, level, academic_session_id, term } = payload;
+    const {
+      student_id,
+      class_id,
+      level,
+      academic_session_id,
+      term,
+      subjects_to_offer_array,
+    } = payload;
 
     const studentSubscribed = await Student.findOne({
       _id: student_id,
@@ -70,12 +77,31 @@ const enrolStudentToClass = async (
     );
 
     if (!compulsorySubjects?.compulsory_subjects?.length) {
-      throw new AppError('Compulsory subjects not found for this class.', 404);
+      throw new AppError('Subjects not found for this class.', 404);
     }
 
     const flattenedSubjects = compulsorySubjects?.compulsory_subjects.map(
       (subject) => subject
     );
+
+    const flattenedSelectedSubjects = subjects_to_offer_array.map((s) => s);
+    console.log('flattenedSelectedSubjects:', flattenedSelectedSubjects);
+
+    const hasInvalidSubjects = flattenedSelectedSubjects.filter(
+      (id) =>
+        !flattenedSubjects.map((s) => s.toString()).includes(id.toString())
+    );
+
+    console.log('hasInvalidSubjects:', hasInvalidSubjects);
+
+    if (hasInvalidSubjects.length > 0) {
+      throw new AppError(
+        `The subjects with the following IDs: ${hasInvalidSubjects.join(
+          ', '
+        )} is not part of the subjects available to be offered in this class.`,
+        400
+      );
+    }
 
     let result;
 
@@ -87,7 +113,7 @@ const enrolStudentToClass = async (
     const studentObj = {
       student: new mongoose.Types.ObjectId(student_id),
       term,
-      subjects_offered: flattenedSubjects,
+      subjects_offered: flattenedSelectedSubjects,
     };
 
     if (!actualClassEnrolment) {
@@ -99,13 +125,26 @@ const enrolStudentToClass = async (
         is_active: true,
         status: enrolmentEnum[0],
       });
+      await result.save({ session });
     } else {
       actualClassEnrolment.students.push(studentObj);
       result = actualClassEnrolment;
       console.log('result: ', result);
-    }
 
-    await result.save({ session });
+      await ClassEnrolment.updateOne(
+        { _id: actualClassEnrolment._id },
+        {
+          $push: {
+            students: studentObj,
+          },
+        },
+        { session }
+      );
+      console.log('result 2: ', result);
+      result = await ClassEnrolment.findById(actualClassEnrolment._id).session(
+        session
+      );
+    }
 
     // UPDATE THE STUDENT DOCUMENT BY ATTACHING THE CLASS ID AND ACADEMIC SESSION TO THE STUDENT DOCUMENT
     const updateStudent = await Student.findByIdAndUpdate(

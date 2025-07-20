@@ -5,8 +5,9 @@ import {
   subjectTypeEnum,
 } from '../constants/enum';
 import { required } from 'joi';
+import { SubjectDocument } from '../constants/types';
 
-const subjectSchema = new mongoose.Schema(
+const subjectSchema = new mongoose.Schema<SubjectDocument>(
   {
     name: { type: String, required: true },
     code: { type: String },
@@ -31,5 +32,5 @@ const subjectSchema = new mongoose.Schema(
   }
 );
 
-const Subject = mongoose.model('Subject', subjectSchema);
+const Subject = mongoose.model<SubjectDocument>('Subject', subjectSchema);
 export default Subject;
