@@ -21,7 +21,7 @@ import {
 const router = express.Router();
 
 router.use(verifyAccessToken);
-router.post(
+router.put(
   '/assign-class-teacher',
   permission(['admin', 'super_admin']),
   assignTeacherToClass
@@ -95,7 +95,7 @@ router.get(
 
 router.get(
   '/get-all-students-in-class-that-teacher-manages/:teacher_id/:class_id/:academic_session_id',
-  permission(['teacher']),
+  permission(['teacher', 'super_admin']),
   getStudentsInClassThatTeacherManages
 );
 

@@ -307,11 +307,7 @@ const createSchoolFees = catchErrors(async (req, res) => {
     }
   }
 
-  const result = await schoolFeesCreation(
-    fee_array,
-
-    receiving_acc_id
-  );
+  const result = await schoolFeesCreation(fee_array, receiving_acc_id);
 
   if (!result) {
     throw new AppError('Unable to create school fees.', 400);

@@ -3,13 +3,13 @@ import { SchoolAccountType } from '../constants/types';
 
 const schoolAccountSchema = new mongoose.Schema<SchoolAccountType>(
   {
-    // accounts: [
-    // {
-    account_number: { type: String, required: true },
-    bank_name: { type: String, required: true },
-    account_name: { type: String, required: true },
-    // },
-    // ],
+    accounts: [
+      {
+        account_number: { type: String, required: true },
+        bank_name: { type: String, required: true },
+        account_name: { type: String, required: true },
+      },
+    ],
   },
   { timestamps: true }
 );

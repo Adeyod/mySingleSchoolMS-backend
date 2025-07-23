@@ -20,6 +20,8 @@ import feeRoute from './routes/fee.route';
 import authRoute from './routes/auth.route';
 import classEnrolmentRoute from './routes/class_enrolment.route';
 import classRoute from './routes/class.route';
+import schoolAccountRoute from './routes/school_account.route';
+
 import nonTeachingRoute from './routes/non_teaching.route';
 import notificationRoute from './routes/notification.route';
 import superAdminRoute from './routes/super_admin.route';
@@ -84,6 +86,7 @@ app.use('/api/v1/teachers', teacherRoute);
 app.use('/api/v1/old-students', oldStudentRoute);
 app.use('/api/v1/jobs', jobRoute);
 app.use('/api/v1/addresses', addressRoute);
+app.use('/api/v1/school-accounts', schoolAccountRoute);
 
 app.use('/api/v1/admins', adminRoute);
 app.use('/api/v1/attendance', attendanceRoute);

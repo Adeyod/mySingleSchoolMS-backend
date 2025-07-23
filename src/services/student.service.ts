@@ -1256,7 +1256,10 @@ const newSessionStudentsSubscription = async (): Promise<
     //   'parent_id'
     // )) as StudentNotificationType[];
 
-    const students = await Student.find({})
+    const students = await Student.find({
+      active_class_enrolment: false,
+      new_session_subscription: null,
+    })
       .populate<{ parent_id: ParentObjType[] }>('parent_id') // Ensure correct type for populated data
       .lean();
 
@@ -1376,7 +1379,7 @@ const studentSessionSubscriptionUpdateByAdmin = async (
   try {
     const { student_ids_array, academic_session_id, userRole } = payload;
 
-    student_ids_array.map((student_id) => {});
+    // student_ids_array.map((student_id) => {});
 
     const validStudentIds = student_ids_array.filter((id) =>
       mongoose.Types.ObjectId.isValid(id)

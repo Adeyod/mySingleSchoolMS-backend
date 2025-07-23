@@ -279,9 +279,14 @@ const schoolFeesCreation = async (
     // console.log('fee_array:', fee_array);
     // console.log('receivingAccount:', receivingAccount);
 
-    const schoolAccountExist = await SchoolAccount.findById({
-      _id: receivingAccount,
-    }).session(session);
+    const schoolAccountExist = await SchoolAccount.findOne(
+      {
+        'accounts._id': receivingAccount,
+      },
+      { 'accounts.$': 1 }
+    ).session(session);
+
+    console.log('schoolAccountExist:', schoolAccountExist);
 
     if (!schoolAccountExist) {
       throw new AppError(

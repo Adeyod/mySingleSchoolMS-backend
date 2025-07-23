@@ -2209,10 +2209,9 @@ type StudentAccountType = Omit<AccountType, '_id'> & {
   balance: number;
 };
 
-type SchoolAccountType = AccountType;
+type SchoolAccountType = { accounts: AccountType[] };
 
 type AccountDetailsType = {
-  school: mongoose.Types.ObjectId;
   account_details_array: AccountType[];
 };
 
