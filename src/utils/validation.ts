@@ -616,12 +616,12 @@ import { JoiError } from './app.error';
 const forbiddenCharsRegex = /^[^|!{}()&=[\]===><>]+$/;
 const forbiddenRegexForSubject = /^[^|!{}()&=[\]===><>.]+$/;
 const academicSessionRegex = /^\d{4}-\d{4}$/;
-const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+// const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+const dateRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z$/;
 // const dateRegex = /^\d{2}-\d{2}-\d{4}$/;
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const phoneNumberPattern = /^[0-9+]{10,14}$/;
-
 const passwordRegex =
   /^(?=.*[!@#$%^&*()_+{}\[\]:;<>,.?~\\/-])(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9]).{8,32}$/;
 
@@ -890,7 +890,6 @@ const sessionValidation = <T extends string | TermDocument>(
     case 'term':
       validationSchema = Joi.object({
         name: Joi.string()
-          .required()
           .required()
           .valid('first_term', 'second_term', 'third_term')
           .messages({
