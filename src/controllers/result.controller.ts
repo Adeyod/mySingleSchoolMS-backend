@@ -554,6 +554,7 @@ import {
   studentsSubjectPositionInClass,
   calculatePositionOfStudentsInClass,
   recordManyStudentExamScores,
+  fetchLevelResultSetting,
 } from '../services/result.service';
 import { AppError } from '../utils/app.error';
 import { validateGradingArray } from '../utils/functions';
@@ -814,6 +815,8 @@ const recordAllStudentsScoresPerTerm = catchErrors(async (req, res) => {
     class_enrolment_id,
     class_id,
   };
+
+  console.log('result_objs:', result_objs);
 
   const result = await recordManyStudentScores(payload);
 
@@ -1677,7 +1680,45 @@ const calculateStudentsClassPosition = catchErrors(async (req, res) => {
   });
 });
 
+const getResultSettings = catchErrors(async (req, res) => {
+  const result = await fetchResultSetting();
+
+  if (!result) {
+    throw new AppError('Unable to fetch result setting.', 400);
+  }
+
+  return res.status(200).json({
+    message: 'Result settings fetched successfully.',
+    success: true,
+    status: 200,
+    result_settings: result,
+  });
+});
+
+const getLevelResultSetting = catchErrors(async (req, res) => {
+  const level = req.params.level;
+
+  if (!level) {
+    throw new AppError('Level is required.', 400);
+  }
+
+  const result = await fetchLevelResultSetting(level);
+
+  if (!result) {
+    throw new AppError('Unable to fetch result setting.', 400);
+  }
+
+  return res.status(200).json({
+    message: 'Result settings fetched successfully.',
+    success: true,
+    status: 200,
+    result_setting: result,
+  });
+});
+
 export {
+  getLevelResultSetting,
+  getResultSettings,
   recordStudentScorePerTerm,
   recordAllStudentsScoresPerTerm,
   getAllSubjectResultOfStudentsInClass,

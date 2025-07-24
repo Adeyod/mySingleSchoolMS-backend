@@ -1,19 +1,21 @@
 import express from 'express';
 import {
+  getResultSettings,
+  getLevelResultSetting,
   recordStudentScorePerTerm,
-  recordAllStudentsScoresPerTerm,
   getAllSubjectResultOfStudentsInClass,
   getStudentSubjectResultInAClass,
   getStudentTermResult,
   getStudentSessionResults,
-  subjectPositionGradingInClass,
-  calculateStudentsClassPosition,
   getAllStudentResultsInClassForActiveTermByClassId,
-  recordAllStudentsExamScoresPerTerm,
-  recordAllStudentsLastTermCumPerTerm,
   getStudentResultByResultId,
   getAllResultsOfAStudent,
-  getResultSetting,
+  calculateStudentsClassPosition,
+  subjectPositionGradingInClass,
+  recordAllStudentsLastTermCumPerTerm,
+  recordAllStudentsExamScoresPerTerm,
+  recordAllStudentsScoresPerTerm,
+  // getResultSetting,
 } from '../controllers/result.controller';
 import { verifyAccessToken } from '../middleware/jwtAuth';
 import { permission } from '../middleware/authorization';
@@ -23,13 +25,25 @@ const router = express.Router();
 router.use(verifyAccessToken);
 
 router.get(
-  '/get-result-setting-in-a-school',
+  '/get-result-setting',
   permission(['teacher', 'admin', 'super_admin', 'student', 'parent']),
-  getResultSetting
+  getResultSettings
 );
 
 router.get(
-  '/get-all-results-of-a-student-in-a-school/:student_id',
+  '/get-level-result-setting-in-a-school/:level',
+  permission(['teacher', 'admin', 'super_admin', 'student', 'parent']),
+  getLevelResultSetting
+);
+
+// router.get(
+//   '/get-result-setting-in-a-school',
+//   permission(['teacher', 'admin', 'super_admin', 'student', 'parent']),
+//   getResultSetting
+// );
+
+router.get(
+  '/get-all-results-of-a-student/:student_id',
   permission(['teacher', 'admin', 'super_admin', 'student', 'parent']),
   getAllResultsOfAStudent
   // populate subject and subject teacher

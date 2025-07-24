@@ -984,9 +984,9 @@ import CbtResult from '../models/cbt_result.model';
 
 const fetchResultSetting = async () => {
   try {
-    const resultSettingExist = await ResultSetting.findOne();
+    const resultSettingExist = await ResultSetting.find();
 
-    if (!resultSettingExist) {
+    if (!resultSettingExist || resultSettingExist.length === 0) {
       throw new AppError(
         'This school does not have result component yet.',
         400
@@ -994,6 +994,48 @@ const fetchResultSetting = async () => {
     }
 
     return resultSettingExist;
+  } catch (error) {
+    if (error instanceof AppError) {
+      throw new AppError(error.message, error.statusCode);
+    } else {
+      console.log(error);
+      throw new Error('Something happened.');
+    }
+  }
+};
+
+const fetchLevelResultSetting = async (level: string) => {
+  try {
+    const resultSettingExist = await ResultSetting.findOne({
+      level: level,
+    });
+
+    if (!resultSettingExist) {
+      throw new AppError(
+        'There is no result settings for this level yet.',
+        400
+      );
+    }
+
+    const examComponent = resultSettingExist.exam_components;
+    const normalComponents = resultSettingExist.components;
+
+    const flattenedExamComponents = examComponent.component.map((comp) => ({
+      ...JSON.parse(JSON.stringify(comp)),
+      exam_name: examComponent.exam_name,
+    }));
+
+    const flattenedComponents = [
+      ...normalComponents,
+      ...flattenedExamComponents,
+    ];
+
+    const result = {
+      flattenedComponents,
+      resultSettingExist,
+    };
+
+    return result;
   } catch (error) {
     if (error instanceof AppError) {
       throw new AppError(error.message, error.statusCode);
@@ -1121,6 +1163,10 @@ const recordManyStudentScores = async (payload: MultipleScoreParamType) => {
     const successfulRecords = results.filter((r) => r.status === 'fulfilled');
     const skippedRecords = results.filter((r) => r.status === 'skipped');
     const failedRecords = results.filter((r) => r.status === 'rejected');
+
+    console.log('successfulRecords:', successfulRecords);
+    console.log('skippedRecords:', skippedRecords);
+    console.log('failedRecords:', failedRecords);
 
     if (successfulRecords.length > 0) {
       const jobs = successfulRecords.map((record) => {
@@ -1269,11 +1315,9 @@ const recordManyStudentCumScores = async (
     }
 
     await session.commitTransaction();
-    // session.endSession();
     return { successfulRecords: results, failedRecords: [] };
   } catch (error) {
     await session.abortTransaction();
-    // session.endSession();
     if (error instanceof AppError) {
       throw new AppError(error.message, error.statusCode);
     } else {
@@ -2088,7 +2132,6 @@ const fetchAllResultsOfAStudent = async (
     const studentResults = await Result.find({
       student: student,
     }).populate([
-      { path: 'school' },
       { path: 'class', select: 'level name' },
       { path: 'academic_session_id', select: 'academic_session' },
       { path: 'student', select: 'first_name last_name' },
@@ -2598,22 +2641,25 @@ const calculatePositionOfStudentsInClass = async (
     );
 
     await session.commitTransaction();
-    session.endSession();
+    // session.endSession();
 
     return updatedPositions;
   } catch (error) {
     await session.abortTransaction();
-    session.endSession();
+    // session.endSession();
     if (error instanceof AppError) {
       throw new AppError(error.message, error.statusCode);
     } else {
       console.log(error);
       throw new Error('Something happened');
     }
+  } finally {
+    session.endSession();
   }
 };
 
 export {
+  fetchLevelResultSetting,
   calculatePositionOfStudentsInClass,
   studentsSubjectPositionInClass,
   recordManyStudentCumScores,
