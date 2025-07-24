@@ -30,15 +30,16 @@ const registerUser = catchErrors(async (req, res) => {
     password,
     confirm_password,
 
-    admission_number,
     // COMMON TO STUDENTS, ADMINS, TEACHERS AND NON-TEACHING
     middle_name,
     dob,
 
     // exclude student
     phone,
+    current_class_level,
     employment_date,
     admission_session,
+    admission_number,
   } = req.body;
 
   const requiredFields = {
@@ -106,6 +107,48 @@ const registerUser = catchErrors(async (req, res) => {
   let otherValidation:
     | { success: boolean; value?: any; error?: string }
     | undefined;
+
+  // if (role === 'parent') {
+  //   payload = {
+  //     middle_name: middle_name ? middle_name.trim().toLowerCase() : undefined,
+  //   };
+  //   otherValidation = parentValidation(payload);
+  // }
+
+  // if (role === 'non_teaching' || role === 'admin') {
+  //   payload = {
+  //     middle_name: middle_name ? middle_name.trim().toLowerCase() : undefined,
+  //     dob,
+  //     employment_date,
+  //   };
+  //   otherValidation = staffValidation(payload);
+  // }
+
+  // if (role === 'teacher') {
+  //   payload = {
+  //     middle_name: middle_name ? middle_name.trim().toLowerCase() : undefined,
+  //     dob,
+  //     employment_date,
+  //   };
+  //   otherValidation = staffValidation(payload);
+  // }
+
+  // if (role === 'super_admin') {
+  //   payload = {
+  //     middle_name: middle_name ? middle_name.trim().toLowerCase() : undefined,
+  //   };
+  //   otherValidation = superAdminValidation(payload);
+  // }
+
+  // if (role === 'student') {
+  //   payload = {
+  //     middle_name: middle_name ? middle_name.trim().toLowerCase() : undefined,
+  //     dob,
+  //     admission_session,
+  //   };
+
+  //   otherValidation = studentValidation(payload);
+  // }
 
   if (role === 'parent') {
     payload = {
