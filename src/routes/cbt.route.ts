@@ -1,19 +1,20 @@
 import express from 'express';
 import {
-  setSubjectCbtObjQuestionsForAClass,
   createTermExamDocument,
-  getAllExamDocument,
-  getExamDocumentById,
-  setSubjectCbtTheroyQuestionsForAClass,
-  startSubjectCbtObjExamForAClass,
+  setSubjectCbtObjQuestionsForAClass,
   createTermClassExamTimetable,
-  getTermClassExamTimetable,
-  getAllClassExamTimetables,
-  getTermExamDocument,
+  startSubjectCbtObjExamForAClass,
   classTeacherAuthorizeStudentsToWriteSubjectCbt,
   updateSubjectCbtObjExamAnswersForAClass,
   updateSubjectCbtObjExamRemainingTimeForAClass,
   submitSubjectCbtObjExamForAClass,
+  getTermExamDocument,
+  getTermClassExamTimetable,
+  
+  getAllExamDocument,
+  getExamDocumentById,
+  setSubjectCbtTheroyQuestionsForAClass,
+  getAllClassExamTimetables,
 } from '../controllers/cbt.controller';
 // import requireFeatureAccess from '../middleware/featureAccess';
 import { permission } from '../middleware/authorization';
@@ -58,7 +59,7 @@ router.get(
 router.post(
   '/create-term-class-exam-timetable/:academic_session_id/:class_id',
   // requireFeatureAccess(['objective_exam', 'theory_exam'], 'any'),
-  permission(['teacher']),
+  permission(['super_admin', 'admin']),
   createTermClassExamTimetable
 );
 

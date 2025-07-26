@@ -291,11 +291,12 @@ const subjectsAdditionToAClass = async (payload: SubjectAdditionType) => {
 
     const activeClassEnrollment = await ClassEnrolment.findOne({
       is_active: true,
+      class: classId,
     });
 
     if (activeClassEnrollment) {
       throw new AppError(
-        'You can not add new subject to a class when there is an active class enrollment.',
+        'You can not add new subject to this class because there is an active class enrollment for the class.',
         400
       );
     }
