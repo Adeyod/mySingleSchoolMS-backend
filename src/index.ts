@@ -49,8 +49,9 @@ const allowedOrigins: string[] = [
   process.env.FRONTEND_URL || '',
   'http://localhost:3000',
   'http://localhost:5173',
-  'https://school-management-system-prod.netlify.app',
-  'https://school-management-system-jade.vercel.app',
+  // 'https://school-management-system-prod.netlify.app',
+  // 'https://school-management-system-jade.vercel.app',
+  'https://winners-college.vercel.app/',
 ];
 
 const corsOptions: CorsOptions = {
