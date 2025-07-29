@@ -34,8 +34,11 @@ import schoolRoute from './routes/school.route';
 import addressRoute from './routes/address.route';
 import subjectRoute from './routes/subject.route';
 import teacherRoute from './routes/teacher.route';
-
-import ngrok from '@ngrok/ngrok';
+import { examStatusUpdatejob } from './utils/cron_jobs';
+import { registerCbtHandlers } from './sockets/cbtSocketHandlers';
+import { createServer } from 'http';
+import { Server } from 'socket.io';
+// import ngrok from '@ngrok/ngrok';
 
 connectDB;
 
@@ -44,6 +47,8 @@ const app = express();
 setupGlobalErrorHandler();
 
 const port = process.env.PORT || 3100;
+
+const httpServer = createServer(app);
 
 const allowedOrigins: string[] = [
   process.env.FRONTEND_URL || '',
@@ -78,7 +83,6 @@ app.options('*', cors(corsOptions));
 app.use(helmet());
 
 app.use('/api/v1/auth', authRoute);
-// app.use('/api/v1/exams', examRoute);
 app.use('/api/v1/sessions', sessionRoute);
 app.use('/api/v1/students', studentRoute);
 app.use('/api/v1/parents', parentRoute);
@@ -112,14 +116,30 @@ app.get('/', (req, res) => {
   });
 });
 
-app.listen(port, () => {
-  console.log(`Bull Board is running at http://localhost:${port}/admin/queues`);
+examStatusUpdatejob();
+const io = new Server(httpServer, {
+  cors: {
+    origin: allowedOrigins,
+    credentials: true,
+  },
+});
+
+io.on('connection', (socket) => {
+  registerCbtHandlers(io, socket);
+});
+
+httpServer.listen(port, () => {
   console.log(`Listening on port ${port}`);
 });
 
-ngrok
-  .connect({ addr: port, authtoken: process.env.NGROK_AUTHTOKEN || '' })
-  .then((listener) => console.log(`Ingress established at: ${listener.url()}`))
-  .catch((error) => {
-    console.error(error);
-  });
+// app.listen(port, () => {
+//   console.log(`Bull Board is running at http://localhost:${port}/admin/queues`);
+//   console.log(`Listening on port ${port}`);
+// });
+
+// ngrok
+//   .connect({ addr: port, authtoken: process.env.NGROK_AUTHTOKEN || '' })
+//   .then((listener) => console.log(`Ingress established at: ${listener.url()}`))
+//   .catch((error) => {
+//     console.error(error);
+//   });
