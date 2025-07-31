@@ -13,6 +13,7 @@ import {
   deleteTermById,
   endASessionBySessionId,
 } from '../controllers/session.controller';
+import { developerProtected } from '../middleware/developerProtected';
 
 const router = express.Router();
 
@@ -34,12 +35,14 @@ router.get(
 router.put(
   '/end-session/:session_id',
   permission(['admin', 'super_admin']),
+  developerProtected,
   endASessionBySessionId
 );
 
 router.put(
   '/end-term/:session_id/:term_id',
   permission(['admin', 'super_admin']),
+  developerProtected,
   endATermInASessionByTermId
 );
 

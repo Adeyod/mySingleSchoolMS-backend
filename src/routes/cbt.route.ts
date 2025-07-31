@@ -10,7 +10,6 @@ import {
   submitSubjectCbtObjExamForAClass,
   getTermExamDocument,
   getTermClassExamTimetable,
-  
   getAllExamDocument,
   getExamDocumentById,
   setSubjectCbtTheroyQuestionsForAClass,
@@ -21,16 +20,16 @@ import { permission } from '../middleware/authorization';
 // import getSchoolId from '../middleware/getSchoolId';
 // import schoolSubDomain from '../middleware/subDomain';
 import { verifyAccessToken } from '../middleware/jwtAuth';
+import { developerProtected } from '../middleware/developerProtected';
 
 const router = express.Router();
 
 router.use(verifyAccessToken);
-// router.use(schoolSubDomain);
-// router.use(getSchoolId);
 router.post(
   '/create-term-exam-document/:academic_session_id/:term',
   // requireFeatureAccess(['objective_exam', 'theory_exam'], 'any'),
   permission(['super_admin']),
+  developerProtected,
   createTermExamDocument
 );
 
@@ -60,6 +59,7 @@ router.post(
   '/create-term-class-exam-timetable/:academic_session_id/:class_id',
   // requireFeatureAccess(['objective_exam', 'theory_exam'], 'any'),
   permission(['super_admin', 'admin']),
+  developerProtected,
   createTermClassExamTimetable
 );
 
