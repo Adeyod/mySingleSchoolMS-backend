@@ -48,7 +48,7 @@ router.get(
 );
 
 router.get(
-  '/get-term-exam-document/:academic_session_id/:term',
+  '/get-term-exam-document/:academic_session_id/:term/:assessment_type',
   // requireFeatureAccess(['objective_exam', 'theory_exam'], 'any'),
   permission(['super_admin', 'teacher', 'student', 'admin']),
   getTermCbtAssessmentDocument
@@ -64,7 +64,7 @@ router.post(
 );
 
 router.get(
-  '/get-term-class-exam-timetable/:academic_session_id/:class_id/:term',
+  '/get-term-class-exam-timetable/:academic_session_id/:class_id/:term/:assessment_type',
   // requireFeatureAccess(['objective_exam', 'theory_exam'], 'any'),
   permission(['teacher', 'student', 'admin', 'super_admin', 'parent']),
   getTermClassCbtAssessmentTimetable
@@ -92,7 +92,7 @@ router.post(
 );
 
 router.get(
-  '/start-obj-exam/:subject_id/:academic_session_id/:class_id/:term',
+  '/start-obj-exam/:subject_id/:academic_session_id/:class_id/:term/:assessment_type',
   // requireFeatureAccess(['objective_exam']),
   permission(['student']),
   startSubjectCbtObjCbtAssessmentForAClass
