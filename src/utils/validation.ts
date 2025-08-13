@@ -607,7 +607,7 @@ import {
   ContactUsType,
   ClassLevelArrayType,
   ObjQuestionType,
-  ExamInputFieldsType,
+  CbtAssessmentInputFieldsType,
   TimetableArrayType,
   CbtCutoffPayload,
 } from '../constants/types';
@@ -1371,11 +1371,11 @@ const joiAccountArrayValidation = <
   return { success: true, value };
 };
 
-const joiValidateExamInputFields = <T extends ExamInputFieldsType>(
+const joiValidateExamInputFields = <T extends CbtAssessmentInputFieldsType>(
   payload: T
 ): { success: boolean; value?: any; error?: string } => {
   const validationSchema = Joi.object({
-    title: commonRules.stringRequired,
+    assessment_type: commonRules.stringRequired,
     min_obj_questions: Joi.number().required(),
     max_obj_questions: Joi.number().required(),
     expected_obj_number_of_options: Joi.number().required(),

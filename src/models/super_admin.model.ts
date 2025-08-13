@@ -24,5 +24,6 @@ const superAdminSchema = new mongoose.Schema<UserDocument>(
   }
 );
 
+superAdminSchema.index({ email: 1 });
 const SuperAdmin = mongoose.model<UserDocument>('SuperAdmin', superAdminSchema);
 export default SuperAdmin;

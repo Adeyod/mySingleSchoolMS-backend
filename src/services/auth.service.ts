@@ -77,20 +77,20 @@ const registerNewUser = async (payload: UserDocument) => {
       throw new AppError('Unable to create token', 400);
     }
 
-    const name = capitalizeFirstLetter(userResult.first_name);
+    // const name = capitalizeFirstLetter(userResult.first_name);
 
-    const jobData = {
-      email: userResult.email,
-      first_name: name,
-      token: userEmailVerification.token,
-      type: 'email-verification',
-    };
+    // const jobData = {
+    //   email: userResult.email,
+    //   first_name: name,
+    //   token: userEmailVerification.token,
+    //   type: 'email-verification',
+    // };
 
-    const mailSent = await emailQueue.add('sendEmail', jobData, {
-      attempts: 3,
-      backoff: 10000,
-      removeOnComplete: true,
-    });
+    // const mailSent = await emailQueue.add('sendEmail', jobData, {
+    //   attempts: 3,
+    //   backoff: 10000,
+    //   removeOnComplete: true,
+    // });
 
     return userResult;
   } catch (error) {

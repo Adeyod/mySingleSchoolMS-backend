@@ -47,7 +47,7 @@ const teacherSchema = new mongoose.Schema<UserDocument>(
   }
 );
 
-teacherSchema.index({ email: 1 }, { unique: true });
+teacherSchema.index({ email: 1 });
 
 const Teacher = mongoose.model<UserDocument>('Teacher', teacherSchema);
 export default Teacher;

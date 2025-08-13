@@ -42,5 +42,6 @@ const oldStudentSchema = new mongoose.Schema<UserDocument>(
   }
 );
 
+oldStudentSchema.index({ email: 1 });
 const OldStudent = mongoose.model<UserDocument>('OldStudent', oldStudentSchema);
 export default OldStudent;

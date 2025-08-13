@@ -133,5 +133,6 @@ const studentSchema = new mongoose.Schema<UserDocument>(
   }
 );
 
+studentSchema.index({ email: 1 });
 const Student = mongoose.model<UserDocument>('Student', studentSchema);
 export default Student;

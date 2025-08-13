@@ -1,20 +1,21 @@
 import { Server, Socket } from 'socket.io';
 import jwt, { JwtPayload } from 'jsonwebtoken';
 import {
-  subjectCbtObjExamRemainingTimeUpdate,
-  subjectCbtObjExamStarting,
-  subjectCbtObjExamSubmission,
-  subjectCbtObjExamUpdate,
+  subjectCbtObjCbtAssessmentRemainingTimeUpdate,
+  subjectCbtObjCbtAssessmentStarting,
+  subjectCbtObjCbtAssessmentSubmission,
+  subjectCbtObjCbtAssessmentUpdate,
 } from '../services/cbt.service';
 import dotenv from 'dotenv';
 import {
-  ExamEndedType,
-  ExamStartingType,
-  ExamTimeUpdateType,
-  ExamUpdateType,
+  CbtAssessmentEndedType,
+  CbtAssessmentStartingType,
+  CbtAssessmentTimeUpdateType,
+  CbtAssessmentUpdateType,
   UserInJwt,
 } from '../constants/types';
 import mongoose from 'mongoose';
+import { studentResultQueue } from '../utils/queue';
 dotenv.config();
 
 const jwt_access_secret = process.env.JWT_ACCESS_SECRET;
@@ -23,8 +24,14 @@ export const registerCbtHandlers = (io: Server, socket: Socket) => {
 
   socket.on('start-exam', async (payload, callback) => {
     try {
-      const { accessToken, term, subject_id, academic_session_id, class_id } =
-        payload;
+      const {
+        accessToken,
+        assessment_type,
+        term,
+        subject_id,
+        academic_session_id,
+        class_id,
+      } = payload;
       if (!accessToken) {
         return callback({ status: 'error', message: 'Access token missing' });
       }
@@ -40,15 +47,16 @@ export const registerCbtHandlers = (io: Server, socket: Socket) => {
 
       const { userId } = decoded;
 
-      const fullPayload: ExamStartingType = {
+      const fullPayload: CbtAssessmentStartingType = {
         term,
         subject_id,
         academic_session_id,
         class_id,
         student_id: userId,
+        assessment_type,
       };
 
-      const result = await subjectCbtObjExamStarting(fullPayload);
+      const result = await subjectCbtObjCbtAssessmentStarting(fullPayload);
       callback({ status: 'success', data: result });
     } catch (error) {
       callback({ status: 'error', message: error });
@@ -73,13 +81,13 @@ export const registerCbtHandlers = (io: Server, socket: Socket) => {
 
       const { userId } = decoded;
 
-      const fullPayload: ExamUpdateType = {
+      const fullPayload: CbtAssessmentUpdateType = {
         cbt_result_id,
         exam_id,
         result_doc,
         student_id: userId,
       };
-      const result = await subjectCbtObjExamUpdate(fullPayload);
+      const result = await subjectCbtObjCbtAssessmentUpdate(fullPayload);
       callback({ status: 'success', data: result });
     } catch (error) {
       callback({ status: 'error', message: error });
@@ -104,13 +112,15 @@ export const registerCbtHandlers = (io: Server, socket: Socket) => {
 
       const { userId } = decoded;
 
-      const fullPayload: ExamTimeUpdateType = {
+      const fullPayload: CbtAssessmentTimeUpdateType = {
         cbt_result_id,
         exam_id,
         remaining_time,
         student_id: userId,
       };
-      const result = await subjectCbtObjExamRemainingTimeUpdate(fullPayload);
+      const result = await subjectCbtObjCbtAssessmentRemainingTimeUpdate(
+        fullPayload
+      );
       callback({ status: 'success', data: result });
     } catch (error) {
       callback({ status: 'error', message: error });
@@ -136,14 +146,26 @@ export const registerCbtHandlers = (io: Server, socket: Socket) => {
 
       const { userId } = decoded;
 
-      const fullPayload: ExamEndedType = {
+      const fullPayload: CbtAssessmentEndedType = {
         cbt_result_id,
         exam_id,
         result_doc,
         student_id: userId,
         trigger_type,
       };
-      const result = await subjectCbtObjExamSubmission(fullPayload);
+
+      const name = 'cbt-assessment-submission';
+      const data = fullPayload;
+      const opts = {
+        attempts: 5,
+        removeOnComplete: true,
+        backoff: {
+          type: 'exponential',
+          delay: 3000,
+        },
+      };
+
+      const result = await studentResultQueue.add(name, data, opts);
       callback({ status: 'success', data: result });
     } catch (error) {
       callback({ status: 'error', message: error });

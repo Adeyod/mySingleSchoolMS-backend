@@ -10,14 +10,16 @@ import {
 } from './nodemailer';
 import {
   EmailJobData,
-  ExamJobData,
+  CbtAssessmentJobData,
   ResultJobData,
   SubjectCumScoreJobData,
   SubjectPositionJobData,
+  CbtAssessmentEndedType,
 } from '../constants/types';
 import { ExpressAdapter } from '@bull-board/express';
 import { createBullBoard } from '@bull-board/api';
 import {
+  processCbtAssessmentSubmission,
   processStudentExamResultUpdate,
   processStudentResultUpdate,
   processStudentSubjectPositionUpdate,
@@ -121,7 +123,11 @@ const emailWorker = new Worker<EmailJobData>(
 
 const studentResultQueue = new Queue('studentResultQueue', { connection });
 const resultWorker = new Worker<
-  ResultJobData | ExamJobData | SubjectPositionJobData | SubjectCumScoreJobData
+  | ResultJobData
+  | CbtAssessmentJobData
+  | SubjectPositionJobData
+  | SubjectCumScoreJobData
+  | CbtAssessmentEndedType
 >(
   'studentResultQueue',
   async (job) => {
@@ -131,7 +137,7 @@ const resultWorker = new Worker<
 
         break;
       case 'update-student-exam':
-        await processStudentExamResultUpdate(job.data as ExamJobData);
+        await processStudentExamResultUpdate(job.data as CbtAssessmentJobData);
         break;
       case 'subject-position':
         await processStudentSubjectPositionUpdate(
@@ -140,6 +146,11 @@ const resultWorker = new Worker<
         break;
       case 'update-cum-score':
         await processSubjectCumScoreUpdate(job.data as SubjectCumScoreJobData);
+        break;
+      case 'cbt-assessment-submission':
+        await processCbtAssessmentSubmission(
+          job.data as CbtAssessmentEndedType
+        );
         break;
 
       default:
@@ -178,9 +189,10 @@ resultWorker.on(
     job:
       | Job<
           | ResultJobData
-          | ExamJobData
+          | CbtAssessmentJobData
           | SubjectPositionJobData
           | SubjectCumScoreJobData
+          | CbtAssessmentEndedType
         >
       | undefined,
     err: Error

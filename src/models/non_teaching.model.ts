@@ -26,7 +26,7 @@ const nonTeachingSchema = new mongoose.Schema<UserDocument>(
   }
 );
 
-nonTeachingSchema.index({ email: 1 }, { unique: true });
+nonTeachingSchema.index({ email: 1 });
 
 const NonTeaching = mongoose.model<UserDocument>(
   'NonTeaching',

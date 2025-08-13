@@ -5,17 +5,19 @@ import {
   triggerTypeEnum,
 } from '../constants/enum';
 import {
-  ExamDocumentCreationType,
-  ExamDocumentPayload,
-  ExamStartingType,
+  CbtAssessmentDocumentCreationType,
+  CbtAssessmentDocumentPayload,
+  CbtAssessmentStartingType,
   SubjectObjQuestionDocumentCreationType,
-  ClassExamTimetablePayloadType,
-  ExamAuthorizationPayloadType,
-  ExamUpdateType,
-  ExamTimeUpdateType,
-  ExamEndedType,
-  GetClassExamTimetablePayloadType,
+  ClassCbtAssessmentTimetablePayloadType,
+  CbtAssessmentAuthorizationPayloadType,
+  CbtAssessmentUpdateType,
+  CbtAssessmentTimeUpdateType,
+  CbtAssessmentEndedType,
+  GetClassCbtAssessmentTimetablePayloadType,
   UserDocument,
+  ExamScoreType,
+  ScoreType,
 } from '../constants/types';
 import CbtCutoff from '../models/cbt_cutoffs.model';
 import CbtExam from '../models/cbt_exam.model';
@@ -36,12 +38,14 @@ import SuperAdmin from '../models/super_admin.model';
 import Admin from '../models/admin.model';
 import { SubjectResult } from '../models/subject_result.model';
 
-const termExamDocumentCreation = async (payload: ExamDocumentCreationType) => {
+const termCbtAssessmentDocumentCreation = async (
+  payload: CbtAssessmentDocumentCreationType
+) => {
   try {
     const {
       academic_session_id,
       term,
-      title,
+      assessment_type,
       min_obj_questions,
       max_obj_questions,
       expected_obj_number_of_options,
@@ -73,16 +77,20 @@ const termExamDocumentCreation = async (payload: ExamDocumentCreationType) => {
     const examDocExist = await CbtExam.findOne({
       academic_session_id: academic_session_id,
       term: term,
+      assessment_type: assessment_type, // this will now be the header of the result
     });
 
     if (examDocExist) {
-      throw new AppError(`${term} exam document already created.`, 400);
+      throw new AppError(
+        `${term} ${assessment_type} document already created.`,
+        400
+      );
     }
 
     const newExamDoc = new CbtExam({
       academic_session_id: academic_session_id,
       term: term,
-      title: title,
+      assessment_type: assessment_type,
       min_obj_questions: min_obj_questions,
       max_obj_questions: max_obj_questions,
       number_of_questions_per_student: number_of_questions_per_student,
@@ -102,9 +110,11 @@ const termExamDocumentCreation = async (payload: ExamDocumentCreationType) => {
   }
 };
 
-const fetchTermExamDocument = async (payload: ExamDocumentPayload) => {
+const fetchTermCbtAssessmentDocument = async (
+  payload: CbtAssessmentDocumentPayload
+) => {
   try {
-    const { academic_session_id, term } = payload;
+    const { academic_session_id, term, assessment_type } = payload;
 
     const academicSessionId = Object(academic_session_id);
 
@@ -133,10 +143,14 @@ const fetchTermExamDocument = async (payload: ExamDocumentPayload) => {
     const examDocExist = await CbtExam.findOne({
       academic_session_id: academic_session_id,
       term: term,
+      assessment_type: assessment_type,
     });
 
     if (!examDocExist) {
-      throw new AppError(`No exam document found for ${term}.`, 400);
+      throw new AppError(
+        `No ${assessment_type} document found for ${term}.`,
+        400
+      );
     }
 
     return examDocExist;
@@ -150,15 +164,15 @@ const fetchTermExamDocument = async (payload: ExamDocumentPayload) => {
   }
 };
 
-const fetchExamDocumentById = async (exam_document_id: string) => {
+const fetchCbtAssessmentDocumentById = async (cbt_document_id: string) => {
   try {
-    const examDocExist = await CbtExam.findById(exam_document_id);
+    const cbtAssessmentDocExist = await CbtExam.findById(cbt_document_id);
 
-    if (!examDocExist) {
-      throw new AppError(`Exam document not found.`, 400);
+    if (!cbtAssessmentDocExist) {
+      throw new AppError(`Cbt assessment document not found.`, 400);
     }
 
-    return examDocExist;
+    return cbtAssessmentDocExist;
   } catch (error) {
     if (error instanceof AppError) {
       throw new AppError(`${error.message}`, 400);
@@ -169,7 +183,9 @@ const fetchExamDocumentById = async (exam_document_id: string) => {
   }
 };
 
-const fetchAllClassExamTimetables = async (payload: { class_id: string }) => {
+const fetchAllClassCbtAssessmentTimetables = async (payload: {
+  class_id: string;
+}) => {
   try {
     const { class_id } = payload;
 
@@ -187,7 +203,7 @@ const fetchAllClassExamTimetables = async (payload: { class_id: string }) => {
 
     if (!timetableExist) {
       throw new AppError(
-        `${classExist.name} does not have exam timetable.`,
+        `${classExist.name} does not have CBT assessment timetable.`,
         400
       );
     }
@@ -203,11 +219,12 @@ const fetchAllClassExamTimetables = async (payload: { class_id: string }) => {
   }
 };
 
-const fetchTermClassExamTimetable = async (
-  payload: GetClassExamTimetablePayloadType
+// We need to fetch timetable by id or by result header name since we will now be having timetable for test and exam as well.
+const fetchTermClassCbtAssessmentTimetable = async (
+  payload: GetClassCbtAssessmentTimetablePayloadType
 ) => {
   try {
-    const { academic_session_id, class_id, term } = payload;
+    const { academic_session_id, class_id, term, assessment_type } = payload;
 
     const classId = Object(class_id);
     const academicSessionId = Object(academic_session_id);
@@ -244,6 +261,7 @@ const fetchTermClassExamTimetable = async (
       class_id: classExist._id,
       academic_session_id: academicSessionExist._id,
       term: term,
+      assessment_type,
     }).populate('scheduled_subjects.subject_id');
 
     if (!timetableExist) {
@@ -264,8 +282,8 @@ const fetchTermClassExamTimetable = async (
   }
 };
 
-const termClassExamTimetableCreation = async (
-  payload: ClassExamTimetablePayloadType
+const termClassCbtAssessmentTimetableCreation = async (
+  payload: ClassCbtAssessmentTimetablePayloadType
 ) => {
   try {
     const {
@@ -275,6 +293,7 @@ const termClassExamTimetableCreation = async (
       userRole,
       term,
       timetable,
+      assessment_type,
     } = payload;
 
     const classId = Object(class_id);
@@ -351,7 +370,7 @@ const termClassExamTimetableCreation = async (
 
     if (termExist && termExist.is_active !== true) {
       throw new AppError(
-        `${term} has ended and set exam questions for a term that has ended.`,
+        `${term} has ended and you can not set exam questions for a term that has ended.`,
         403
       );
     }
@@ -377,18 +396,19 @@ const termClassExamTimetableCreation = async (
     const cbtExamExist = await CbtExam.findOne({
       academic_session_id: academicSessionExist._id,
       term: term,
+      assessment_type: assessment_type,
     });
 
     if (!cbtExamExist) {
       throw new AppError(
-        `Reach out to the school management to initialize exam processes before continuing.`,
+        `Reach out to the school management to initialize ${assessment_type} processes before continuing.`,
         400
       );
     }
 
     if (cbtExamExist.is_active !== true) {
       throw new AppError(
-        'Exam timetable can not be created because the time for it for the selected term has ended.',
+        `${assessment_type} timetable can not be created because the time for it for the selected term has ended.`,
         400
       );
     }
@@ -397,6 +417,7 @@ const termClassExamTimetableCreation = async (
       class_id: classExist._id,
       academic_session_id: academicSessionExist._id,
       term: term,
+      assessment_type: assessment_type,
     });
 
     // if (timetableExist) {
@@ -502,6 +523,7 @@ const termClassExamTimetableCreation = async (
       class_id: classExist._id,
       academic_session_id: academicSessionExist._id,
       term: term,
+      assessment_type: assessment_type,
       scheduled_subjects: timetable,
     });
 
@@ -518,7 +540,7 @@ const termClassExamTimetableCreation = async (
   }
 };
 
-const fetchAllExamDocument = async (
+const fetchAllCbtAssessmentDocument = async (
   page?: number,
   limit?: number,
   searchParams = ''
@@ -577,6 +599,7 @@ const objQestionSetting = async (
       term,
       subject_id,
       teacher_id,
+      assessment_type,
     } = payload;
 
     const classId = Object(class_id);
@@ -651,6 +674,7 @@ const objQestionSetting = async (
     const examDocExist = await CbtExam.findOne({
       academic_session_id: academicSessionExist._id,
       term: term,
+      assessment_type: assessment_type,
     });
 
     if (!examDocExist) {
@@ -665,17 +689,21 @@ const objQestionSetting = async (
       academic_session_id: academicSessionExist._id,
       class_id: classExist._id,
       term: term,
+      assessment_type: assessment_type,
     });
 
     if (!classExamTimetable) {
       throw new AppError(
-        `Timetable has not been created for ${classExist.name} for ${term}. Please ensure that exam timetable has been created before setting questions.`,
+        `${assessment_type} Timetable has not been created for ${classExist.name} for ${term}. Please ensure that exam timetable has been created before setting questions.`,
         400
       );
     }
 
     if (classExamTimetable.exam_id.toString() !== examDocExist._id.toString()) {
-      throw new AppError(`The timetable found is not for this exam.`, 400);
+      throw new AppError(
+        `The timetable found is not for ${assessment_type} CBT assessment.`,
+        400
+      );
     }
 
     const minLength = examDocExist.min_obj_questions;
@@ -739,7 +767,7 @@ const objQestionSetting = async (
 
     if (subjectQuestionExist && subjectQuestionExist.obj_questions.length > 0) {
       throw new AppError(
-        `${term} Exam question has been submitted for ${subjectExist.name} in ${classExist.name}.`,
+        `${assessment_type} question has been submitted for ${subjectExist.name} in ${classExist.name}.`,
         400
       );
     }
@@ -819,8 +847,8 @@ const objQestionSetting = async (
   }
 };
 
-const studentCbtSubjectExamAuthorization = async (
-  payload: ExamAuthorizationPayloadType
+const studentCbtSubjectCbtAssessmentAuthorization = async (
+  payload: CbtAssessmentAuthorizationPayloadType
 ) => {
   try {
     const {
@@ -829,6 +857,7 @@ const studentCbtSubjectExamAuthorization = async (
       academic_session_id,
       class_id,
       teacher_id,
+      assessment_type,
       students_id_array,
     } = payload;
 
@@ -928,10 +957,14 @@ const studentCbtSubjectExamAuthorization = async (
     const examDocExist = await CbtExam.findOne({
       academic_session_id: academicSessionExist._id,
       term: term,
+      assessment_type: assessment_type,
     });
 
     if (!examDocExist) {
-      throw new AppError(`Exam has not being authorized to start.`, 403);
+      throw new AppError(
+        `CBT assessment for ${assessment_type} has not being authorized to start.`,
+        403
+      );
     }
 
     const questionExist = await CbtQuestion.findOne({
@@ -981,6 +1014,7 @@ const studentCbtSubjectExamAuthorization = async (
       class_id: classExist._id,
       term: term,
       exam_id: questionExist.exam_id,
+      assessment_type: assessment_type,
     });
 
     if (!actualExamTimeTable) {
@@ -1061,12 +1095,20 @@ const studentCbtSubjectExamAuthorization = async (
   }
 };
 
-const subjectCbtObjExamStarting = async (payload: ExamStartingType) => {
+const subjectCbtObjCbtAssessmentStarting = async (
+  payload: CbtAssessmentStartingType
+) => {
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
-    const { academic_session_id, class_id, student_id, term, subject_id } =
-      payload;
+    const {
+      assessment_type,
+      academic_session_id,
+      class_id,
+      student_id,
+      term,
+      subject_id,
+    } = payload;
 
     const classId = Object(class_id);
     const studentId = Object(student_id);
@@ -1135,6 +1177,7 @@ const subjectCbtObjExamStarting = async (payload: ExamStartingType) => {
     const examDocExist = await CbtExam.findOne({
       academic_session_id: academicSessionExist._id,
       term: term,
+      assessment_type: assessment_type,
     }).session(session);
 
     if (!examDocExist) {
@@ -1293,6 +1336,7 @@ const subjectCbtObjExamStarting = async (payload: ExamStartingType) => {
       class_id: classExist._id,
       term: term,
       exam_id: exam.exam_id,
+      assessment_type: assessment_type,
     }).session(session);
 
     if (!actualExamTimeTable) {
@@ -1328,6 +1372,7 @@ const subjectCbtObjExamStarting = async (payload: ExamStartingType) => {
         class_id: classExist._id,
         term: term,
         exam_id: exam.exam_id,
+        assessment_type: assessment_type,
         'scheduled_subjects.subject_id': subject_id,
       },
       {
@@ -1366,7 +1411,9 @@ const subjectCbtObjExamStarting = async (payload: ExamStartingType) => {
   }
 };
 
-const subjectCbtObjExamUpdate = async (payload: ExamUpdateType) => {
+const subjectCbtObjCbtAssessmentUpdate = async (
+  payload: CbtAssessmentUpdateType
+) => {
   // const session = await mongoose.startSession();
   // session.startTransaction();
   try {
@@ -1470,8 +1517,8 @@ const subjectCbtObjExamUpdate = async (payload: ExamUpdateType) => {
   }
 };
 
-const subjectCbtObjExamRemainingTimeUpdate = async (
-  payload: ExamTimeUpdateType
+const subjectCbtObjCbtAssessmentRemainingTimeUpdate = async (
+  payload: CbtAssessmentTimeUpdateType
 ) => {
   // const session = await mongoose.startSession();
   // session.startTransaction();
@@ -1551,7 +1598,330 @@ const subjectCbtObjExamRemainingTimeUpdate = async (
   }
 };
 
-const subjectCbtObjExamSubmission = async (payload: ExamEndedType) => {
+// const subjectCbtObjCbtAssessmentSubmission = async (payload: CbtAssessmentEndedType) => {
+//   const session = await mongoose.startSession();
+//   session.startTransaction();
+//   try {
+//     const { cbt_result_id, exam_id, result_doc, student_id, trigger_type } =
+//       payload;
+
+//     const studentId = Object(student_id);
+//     const examId = Object(exam_id);
+//     const cbtResultId = Object(cbt_result_id);
+
+//     const studentExist = await Student.findById(studentId).session(session);
+
+//     if (!studentExist) {
+//       throw new AppError('Student not found.', 404);
+//     }
+
+//     const examDocExist = await CbtExam.findById({
+//       _id: examId,
+//     }).session(session);
+
+//     if (!examDocExist) {
+//       throw new AppError(`Exam has not being authorized to start.`, 403);
+//     }
+
+//     let result = await CbtResult.findOne({
+//       _id: cbtResultId,
+//       exam_id: examDocExist._id,
+//       student_id: studentId,
+//     }).session(session);
+
+//     if (!result) {
+//       throw new AppError(`Result does not exist.`, 404);
+//     }
+
+//     console.log('result.obj_status:', result.obj_status);
+
+//     const notStarted = result.obj_status === examStatusEnum[0];
+//     const isSubmitted = result.obj_status === examStatusEnum[2];
+//     if (notStarted || isSubmitted) {
+//       console.log('result.obj_status:', result.obj_status);
+//       throw new AppError(
+//         'This subject exam is not in-progress. It is either completed or ended. Here',
+//         400
+//       );
+//     }
+
+//     const current_time = Date.now();
+//     const start_time = new Date(result.obj_start_time).getTime();
+//     const end_time = new Date(result.obj_final_cutoff_time).getTime();
+//     const grace_period = 5 * 60 * 1000;
+//     const finalSubmission = end_time + grace_period;
+
+//     if (current_time < start_time) {
+//       throw new AppError(
+//         `You cannot update the exam before the scheduled time.`,
+//         401
+//       );
+//     }
+
+//     if (current_time > finalSubmission) {
+//       throw new AppError(`Exam is over.`, 401);
+//     }
+
+//     // START CHECKING TRIGGER TYPE HERE
+//     if (trigger_type === triggerTypeEnum[0]) {
+//       result.obj_time_left = result_doc.obj_time_left;
+//       result.obj_status = examStatusEnum[2];
+//     } else if (trigger_type === triggerTypeEnum[1]) {
+//       result.obj_time_left = result_doc.obj_time_left;
+//       result.obj_status = examStatusEnum[2];
+//     } else if (trigger_type === triggerTypeEnum[2]) {
+//       const examCutoffTime = result.obj_final_cutoff_time.getTime();
+//       if (current_time < examCutoffTime) {
+//         throw new AppError(
+//           `It is not yet the final cutoff time so student can still take exam.`,
+//           400
+//         );
+//       }
+
+//       result.obj_time_left = result.obj_time_left;
+//       result.obj_status = examStatusEnum[3];
+//     }
+
+//     const questionMap = new Map(
+//       result.shuffled_obj_questions.map((q) => [q._id.toString(), q])
+//     );
+
+//     let totalStudentScore = 0;
+
+//     result_doc.sanitizedQuestions.forEach((a) => {
+//       const existingQuestion = questionMap.get(a._id.toString());
+
+//       if (existingQuestion) {
+//         existingQuestion.selected_answer = a.selected_answer;
+
+//         if (a.selected_answer === existingQuestion.correct_answer) {
+//           existingQuestion.student_score = existingQuestion.score;
+//         } else {
+//           existingQuestion.student_score = 0;
+//         }
+//         totalStudentScore += existingQuestion.student_score;
+//       }
+//     });
+
+//     // Max that a student can get
+//     const totalPossibleScore = result.shuffled_obj_questions.reduce(
+//       (acc, q) => acc + q.score,
+//       0
+//     );
+
+//     const resultSettings = await ResultSetting.findOne({
+//       level: result.level,
+//     }).session(session);
+
+//     const exam_component_name = resultSettings?.exam_components.exam_name;
+//     const exam_components = resultSettings?.exam_components.component;
+
+//     const objKeyName = exam_components?.find((k) => k.key === examKeyEnum[0]);
+
+//     if (!objKeyName?.percentage || !objKeyName?.name) {
+//       throw new AppError(
+//         'Objective scoring setup not found in result settings.',
+//         400
+//       );
+//     }
+
+//     // objWeight is maxObjPercent
+//     // studentScore is totalStudentScore
+//     // totalScore  is totalPossibleScore
+//     const rawPercentage = (totalStudentScore / totalPossibleScore) * 100;
+
+//     const maxObjectivePercent = objKeyName?.percentage; // we get this from the result settings of the school
+//     const convertedScore = totalPossibleScore
+//       ? (rawPercentage / 100) * maxObjectivePercent
+//       : 0;
+//     // convertedScore is what we will be adding with theory score
+
+//     result.objective_total_score = totalStudentScore;
+//     result.obj_submitted_at = new Date();
+//     result.percent_score = convertedScore;
+//     result.obj_trigger_type = trigger_type;
+
+//     result.markModified('shuffled_obj_questions');
+
+//     // TO GET THE MATCHING RESULT WE NEED THE FOLLOWING:
+//     //  ENROLMENT_ID,  CLASS_ID,
+
+//     /**
+//      * SEEN
+//      * SCHOOL_ID,
+//      * STUDENT_ID,
+//      * ACADEMIC_SESSION_ID(GET THIS AFTER FETCHING CBT RESULT USING CBT_RESULT_ID)
+//      * SUBJECT_ID(SAME AS ACADEMIC_SESSION_ID)
+//      * TERM(SAME AS ABOVE)
+//      */
+
+//     // Find subject result here also and update it as well
+//     const studentSubjectResult = await SubjectResult.findOne({
+//       enrolment: result.enrolment,
+//       student: studentExist._id,
+//       class: result.class_id,
+//       session: result.academic_session_id,
+//       subject: result.subject_id,
+//     }).session(session);
+
+//     const termResult = studentSubjectResult?.term_results.find(
+//       (a) => a.term === result.term
+//     );
+
+//     const alreadyHasExam = termResult?.scores.find(
+//       (score) =>
+//         score.score_name.toLowerCase() === exam_component_name?.toLowerCase()
+//     );
+
+//     const examObj = {
+//       key: objKeyName.key,
+//       score_name: objKeyName?.name,
+//       score: convertedScore,
+//     };
+
+//     const subjectObj = {
+//       subject: result.subject_id,
+//       subject_teacher: result.subject_teacher,
+//       total_score: 0,
+//       cumulative_average: 0,
+//       last_term_cumulative: 0,
+//       scores: [examObj],
+//       exam_object: [examObj],
+//       subject_position: '',
+//     };
+
+//     if (alreadyHasExam) {
+//       console.log('Student already has exam result recorded.');
+//     }
+
+//     const hasRecordedExamScore = termResult?.exam_object.find(
+//       (s) => s.score_name.toLowerCase() === examObj.score_name.toLowerCase()
+//     );
+//     if (hasRecordedExamScore) {
+//       console.log(
+//         `Score for ${examObj.score_name} has been recorded for this student.`
+//       );
+//     }
+
+//     termResult?.scores.push(examObj);
+//     termResult?.exam_object.push(examObj);
+//     studentSubjectResult?.markModified('term_results');
+
+//     const mainResult = await Result.findOne({
+//       student: studentExist._id,
+//       enrolment: result.enrolment,
+//       class: result.class_id,
+//       academic_session_id: result.academic_session_id,
+//     }).session(session);
+
+//     let termExistInResultDoc = mainResult?.term_results.find(
+//       (t) => t.term === result.term
+//     );
+
+//     if (!termExistInResultDoc) {
+//       termExistInResultDoc = {
+//         term: result.term,
+//         cumulative_score: 0,
+//         subject_results: [subjectObj],
+//         class_position: '',
+//       };
+
+//       mainResult?.term_results.push(termExistInResultDoc);
+//       mainResult?.markModified('term_results');
+//     } else {
+//       const mainSubjectResult = termExistInResultDoc?.subject_results.find(
+//         (s) => s.subject.toString() === result.subject_id.toString()
+//       );
+
+//       if (!mainSubjectResult) {
+//         termExistInResultDoc?.subject_results?.push(subjectObj);
+//         mainResult?.markModified('term_results');
+//       }
+
+//       mainSubjectResult?.exam_object.push(examObj);
+//       mainSubjectResult?.scores.push(examObj);
+//       mainResult?.markModified('term_results');
+//     }
+
+//     /**
+//      * GET THE RESULT SETTINGS AND FETCH EXAM_COMPONENT TO KNOW THE
+//      * NAME THAT THE SCHOOL GIVES TO THEIR OBJ
+//      *
+//      */
+
+//     await result.save({ session });
+
+//     if (studentSubjectResult) {
+//       await studentSubjectResult.save({ session });
+//     }
+
+//     if (mainResult) {
+//       await mainResult.save({ session });
+//     }
+
+//     const actualExamTimeTable = await ClassExamTimetable.findOne({
+//       academic_session_id: result.academic_session_id,
+//       class_id: result.class_id,
+//       term: result.term,
+//       exam_id: result.exam_id,
+//     }).session(session);
+
+//     if (!actualExamTimeTable) {
+//       throw new AppError(
+//         `There is no timetable for this class in this ${result.term}.`,
+//         400
+//       );
+//     }
+
+//     const findSubjectTimetable = actualExamTimeTable.scheduled_subjects.find(
+//       (s) => s.subject_id.toString() === result.subject_id.toString()
+//     );
+
+//     if (!findSubjectTimetable) {
+//       throw new AppError(
+//         `The time to write this subject exam is not taken care off in the timetable.`,
+//         400
+//       );
+//     }
+
+//     await ClassExamTimetable.updateOne(
+//       {
+//         academic_session_id: result.academic_session_id,
+//         class_id: result.class_id,
+//         term: result.term,
+//         exam_id: result.exam_id,
+//         'scheduled_subjects.subject_id': result.subject_id,
+//       },
+//       {
+//         $pull: {
+//           'scheduled_subjects.$.students_that_have_started': result.student_id,
+//         },
+//         $addToSet: {
+//           'scheduled_subjects.$.students_that_have_submitted':
+//             result.student_id,
+//         },
+//       },
+//       { session }
+//     );
+
+//     await session.commitTransaction();
+//     session.endSession();
+//     return result;
+//   } catch (error) {
+//     await session.abortTransaction();
+//     session.endSession();
+//     if (error instanceof AppError) {
+//       throw new AppError(`${error.message}`, 400);
+//     } else {
+//       console.error(error);
+//       throw new Error('Something went wrong');
+//     }
+//   }
+// };
+
+const subjectCbtObjCbtAssessmentSubmission = async (
+  payload: CbtAssessmentEndedType
+) => {
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
@@ -1666,28 +2036,47 @@ const subjectCbtObjExamSubmission = async (payload: ExamEndedType) => {
       level: result.level,
     }).session(session);
 
-    const exam_component_name = resultSettings?.exam_components.exam_name;
-    const exam_components = resultSettings?.exam_components.component;
-
-    const objKeyName = exam_components?.find((k) => k.key === examKeyEnum[0]);
-
-    if (!objKeyName?.percentage || !objKeyName?.name) {
-      throw new AppError(
-        'Objective scoring setup not found in result settings.',
-        400
-      );
+    if (!resultSettings) {
+      throw new AppError(`There is no result settings for this class.`, 404);
     }
 
-    // objWeight is maxObjPercent
-    // studentScore is totalStudentScore
-    // totalScore  is totalPossibleScore
+    const exam_component_name = resultSettings?.exam_components.exam_name;
+
+    let objKeyName;
+    let testName: string;
+    if (examDocExist.assessment_type !== exam_component_name) {
+      // do for test
+      objKeyName = resultSettings.components?.find(
+        (k) => k.name === examDocExist.assessment_type
+      );
+
+      if (!objKeyName?.percentage || !objKeyName?.name) {
+        throw new AppError(
+          'Objective scoring setup not found in result settings.',
+          400
+        );
+      }
+      testName = objKeyName?.name;
+    } else {
+      // do for exam
+      const exam_components = resultSettings?.exam_components.component;
+
+      objKeyName = exam_components?.find((k) => k.key === examKeyEnum[0]);
+
+      if (!objKeyName?.percentage || !objKeyName?.name) {
+        throw new AppError(
+          'Objective scoring setup not found in result settings.',
+          400
+        );
+      }
+    }
+
     const rawPercentage = (totalStudentScore / totalPossibleScore) * 100;
 
     const maxObjectivePercent = objKeyName?.percentage; // we get this from the result settings of the school
     const convertedScore = totalPossibleScore
       ? (rawPercentage / 100) * maxObjectivePercent
       : 0;
-    // convertedScore is what we will be adding with theory score
 
     result.objective_total_score = totalStudentScore;
     result.obj_submitted_at = new Date();
@@ -1696,19 +2085,6 @@ const subjectCbtObjExamSubmission = async (payload: ExamEndedType) => {
 
     result.markModified('shuffled_obj_questions');
 
-    // TO GET THE MATCHING RESULT WE NEED THE FOLLOWING:
-    //  ENROLMENT_ID,  CLASS_ID,
-
-    /**
-     * SEEN
-     * SCHOOL_ID,
-     * STUDENT_ID,
-     * ACADEMIC_SESSION_ID(GET THIS AFTER FETCHING CBT RESULT USING CBT_RESULT_ID)
-     * SUBJECT_ID(SAME AS ACADEMIC_SESSION_ID)
-     * TERM(SAME AS ABOVE)
-     */
-
-    // Find subject result here also and update it as well
     const studentSubjectResult = await SubjectResult.findOne({
       enrolment: result.enrolment,
       student: studentExist._id,
@@ -1721,43 +2097,97 @@ const subjectCbtObjExamSubmission = async (payload: ExamEndedType) => {
       (a) => a.term === result.term
     );
 
-    const alreadyHasExam = termResult?.scores.find(
-      (score) =>
-        score.score_name.toLowerCase() === exam_component_name?.toLowerCase()
-    );
+    let subjectObj;
+    let examObj: ExamScoreType | null = null;
+    let testObj: ScoreType | null = null;
 
-    const examObj = {
-      key: objKeyName.key,
-      score_name: objKeyName?.name,
-      score: convertedScore,
-    };
+    if (examDocExist.assessment_type !== exam_component_name) {
+      // do for test
 
-    const subjectObj = {
-      subject: result.subject_id,
-      subject_teacher: result.subject_teacher,
-      total_score: 0,
-      cumulative_average: 0,
-      last_term_cumulative: 0,
-      scores: [examObj],
-      exam_object: [examObj],
-      subject_position: '',
-    };
-
-    if (alreadyHasExam) {
-      console.log('Student already has exam result recorded.');
-    }
-
-    const hasRecordedExamScore = termResult?.exam_object.find(
-      (s) => s.score_name.toLowerCase() === examObj.score_name.toLowerCase()
-    );
-    if (hasRecordedExamScore) {
-      console.log(
-        `Score for ${examObj.score_name} has been recorded for this student.`
+      const alreadyHasExam = termResult?.scores.find(
+        (score) => score.score_name.toLowerCase() === testName?.toLowerCase()
       );
+
+      if (alreadyHasExam) {
+        console.log('Student already has exam result recorded.');
+      }
+
+      testObj = {
+        score_name: objKeyName?.name,
+        score: convertedScore,
+      };
+
+      subjectObj = {
+        subject: result.subject_id,
+        subject_teacher: result.subject_teacher,
+        total_score: 0,
+        cumulative_average: 0,
+        last_term_cumulative: 0,
+        scores: [testObj],
+        exam_object: [],
+        subject_position: '',
+      };
+
+      const hasRecordedExamScore = termResult?.scores.find(
+        (s) => s.score_name.toLowerCase() === testObj?.score_name.toLowerCase()
+      );
+
+      if (hasRecordedExamScore) {
+        console.log(
+          `Score for ${testObj.score_name} has been recorded for this student.`
+        );
+      }
+      termResult?.scores.push(testObj);
+    } else {
+      // do for exam
+      const alreadyHasExam = termResult?.scores.find(
+        (score) =>
+          score.score_name.toLowerCase() === exam_component_name?.toLowerCase()
+      );
+
+      if (alreadyHasExam) {
+        console.log('Student already has exam result recorded.');
+      }
+      const exam_components = resultSettings?.exam_components.component;
+
+      objKeyName = exam_components?.find((k) => k.key === examKeyEnum[0]);
+
+      if (!objKeyName?.percentage || !objKeyName?.name) {
+        throw new AppError(
+          'Objective scoring setup not found in result settings.',
+          400
+        );
+      }
+
+      examObj = {
+        key: objKeyName.key,
+        score_name: objKeyName?.name,
+        score: convertedScore,
+      };
+
+      subjectObj = {
+        subject: result.subject_id,
+        subject_teacher: result.subject_teacher,
+        total_score: 0,
+        cumulative_average: 0,
+        last_term_cumulative: 0,
+        scores: [examObj],
+        exam_object: [examObj],
+        subject_position: '',
+      };
+
+      const hasRecordedExamScore = termResult?.exam_object.find(
+        (s) => s.score_name.toLowerCase() === examObj?.score_name.toLowerCase()
+      );
+      if (hasRecordedExamScore) {
+        console.log(
+          `Score for ${examObj.score_name} has been recorded for this student.`
+        );
+      }
+      termResult?.scores.push(examObj);
+      termResult?.exam_object.push(examObj);
     }
 
-    termResult?.scores.push(examObj);
-    termResult?.exam_object.push(examObj);
     studentSubjectResult?.markModified('term_results');
 
     const mainResult = await Result.findOne({
@@ -1791,16 +2221,18 @@ const subjectCbtObjExamSubmission = async (payload: ExamEndedType) => {
         mainResult?.markModified('term_results');
       }
 
-      mainSubjectResult?.exam_object.push(examObj);
-      mainSubjectResult?.scores.push(examObj);
+      if (examDocExist.assessment_type !== exam_component_name) {
+        if (testObj) {
+          mainSubjectResult?.scores.push(testObj);
+        }
+      } else {
+        if (examObj) {
+          mainSubjectResult?.exam_object.push(examObj);
+          mainSubjectResult?.scores.push(examObj);
+        }
+      }
       mainResult?.markModified('term_results');
     }
-
-    /**
-     * GET THE RESULT SETTINGS AND FETCH EXAM_COMPONENT TO KNOW THE
-     * NAME THAT THE SCHOOL GIVES TO THEIR OBJ
-     *
-     */
 
     await result.save({ session });
 
@@ -2013,18 +2445,18 @@ const theoryQestionSetting = async (
 };
 
 export {
-  subjectCbtObjExamRemainingTimeUpdate,
-  fetchTermClassExamTimetable,
-  subjectCbtObjExamSubmission,
-  subjectCbtObjExamUpdate,
-  studentCbtSubjectExamAuthorization,
-  termClassExamTimetableCreation,
-  subjectCbtObjExamStarting,
-  termExamDocumentCreation,
+  subjectCbtObjCbtAssessmentRemainingTimeUpdate,
+  fetchTermClassCbtAssessmentTimetable,
+  subjectCbtObjCbtAssessmentSubmission,
+  subjectCbtObjCbtAssessmentUpdate,
+  studentCbtSubjectCbtAssessmentAuthorization,
+  termClassCbtAssessmentTimetableCreation,
+  subjectCbtObjCbtAssessmentStarting,
+  termCbtAssessmentDocumentCreation,
   objQestionSetting,
   theoryQestionSetting,
-  fetchTermExamDocument,
-  fetchExamDocumentById,
-  fetchAllClassExamTimetables,
-  fetchAllExamDocument,
+  fetchTermCbtAssessmentDocument,
+  fetchCbtAssessmentDocumentById,
+  fetchAllClassCbtAssessmentTimetables,
+  fetchAllCbtAssessmentDocument,
 };

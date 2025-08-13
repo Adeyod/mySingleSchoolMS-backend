@@ -27,5 +27,6 @@ const adminSchema = new mongoose.Schema<UserDocument>(
   }
 );
 
+adminSchema.index({ email: 1 });
 const Admin = mongoose.model<UserDocument>('Admin', adminSchema);
 export default Admin;

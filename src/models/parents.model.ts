@@ -26,6 +26,7 @@ const parentSchema = new mongoose.Schema<UserDocument>(
   }
 );
 
+parentSchema.index({ emai: 1 });
 const Parent = mongoose.model<UserDocument>('Parent', parentSchema);
 
 export default Parent;

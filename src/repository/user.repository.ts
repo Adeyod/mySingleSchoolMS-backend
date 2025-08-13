@@ -47,11 +47,15 @@ const findUserByEmail = async (email: string): Promise<UserDocument | null> => {
       },
     ];
 
-    for (const { model, field } of userCollections) {
-      const user = await model.findOne({ [field]: email });
-      if (user) {
-        return user as UserDocument;
-      }
+    const queries = userCollections.map(({ model, field }) =>
+      model.findOne({ [field]: email }).exec()
+    );
+
+    const results = await Promise.all(queries);
+    const foundUser = results.find((user) => user !== null);
+
+    if (foundUser) {
+      return foundUser as UserDocument;
     }
 
     return null;
@@ -137,7 +141,7 @@ const createNewUserDoc = async (payload: UserDocument) => {
       gender: payload.gender.toLowerCase(),
       email: payload.email,
       password: hashedPassword,
-      dob: payload.dob,
+      // dob: payload.dob,
       role: payload.role,
     };
 
@@ -206,7 +210,10 @@ const createNewUserDoc = async (payload: UserDocument) => {
       ...roleSpecificFields[payload.role],
     });
 
-    return await newUser.save();
+    console.log('users:', newUser);
+
+    return await newUser;
+    // .save();
   } catch (error) {
     if (error instanceof Error) {
       throw new Error(`Error creating new user document: ${error.message}`);

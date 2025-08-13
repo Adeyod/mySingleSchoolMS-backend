@@ -20,6 +20,7 @@ import {
 } from '../utils/validation';
 
 const registerUser = catchErrors(async (req, res) => {
+  console.log('I am being called', req.body);
   const {
     // COMMON TO ALL
     first_name,

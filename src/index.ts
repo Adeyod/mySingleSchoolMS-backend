@@ -107,6 +107,18 @@ app.use('/api/v1/super-admin', superAdminRoute);
 app.use('/api/v1/school', schoolRoute);
 
 app.use('/admin/queues', serverAdapter.getRouter());
+
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    if (duration > 5000) {
+      console.log(`⏱️ Slow request: ${req.method} ${req.url} - ${duration}ms`);
+    }
+  });
+  next();
+});
+
 app.use(errorHandler);
 app.get('/', (req, res) => {
   res.json({

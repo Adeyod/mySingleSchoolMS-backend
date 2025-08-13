@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import { termEnum } from '../constants/enum';
-import { ClassExamTimetableDocument } from '../constants/types';
+import { ClassCbtAssessmentTimetableDocument } from '../constants/types';
 
 const subjectScheduleSchema = new mongoose.Schema({
   subject_id: {
@@ -43,8 +43,9 @@ const subjectScheduleSchema = new mongoose.Schema({
 });
 
 const classExamTimetableSchema =
-  new mongoose.Schema<ClassExamTimetableDocument>(
+  new mongoose.Schema<ClassCbtAssessmentTimetableDocument>(
     {
+      assessment_type: { type: String, required: true },
       exam_id: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'CbtExam',
@@ -68,7 +69,7 @@ const classExamTimetableSchema =
     }
   );
 
-const ClassExamTimetable = mongoose.model<ClassExamTimetableDocument>(
+const ClassExamTimetable = mongoose.model<ClassCbtAssessmentTimetableDocument>(
   'ClassExamTimetable',
   classExamTimetableSchema
 );

@@ -1,19 +1,20 @@
 import mongoose from 'mongoose';
 import { triggerTypeEnum } from '../constants/enum';
 import {
-  termExamDocumentCreation,
-  fetchTermExamDocument,
-  fetchExamDocumentById,
+  subjectCbtObjCbtAssessmentRemainingTimeUpdate,
+  fetchTermClassCbtAssessmentTimetable,
+  subjectCbtObjCbtAssessmentSubmission,
+  subjectCbtObjCbtAssessmentUpdate,
+  studentCbtSubjectCbtAssessmentAuthorization,
+  termClassCbtAssessmentTimetableCreation,
+  subjectCbtObjCbtAssessmentStarting,
+  termCbtAssessmentDocumentCreation,
   objQestionSetting,
-  subjectCbtObjExamStarting,
-  termClassExamTimetableCreation,
-  fetchAllExamDocument,
-  studentCbtSubjectExamAuthorization,
-  subjectCbtObjExamUpdate,
-  subjectCbtObjExamSubmission,
-  fetchTermClassExamTimetable,
-  subjectCbtObjExamRemainingTimeUpdate,
-  fetchAllClassExamTimetables,
+  theoryQestionSetting,
+  fetchTermCbtAssessmentDocument,
+  fetchCbtAssessmentDocumentById,
+  fetchAllClassCbtAssessmentTimetables,
+  fetchAllCbtAssessmentDocument,
 } from '../services/cbt.service';
 import { AppError } from '../utils/app.error';
 import catchErrors from '../utils/tryCatch';
@@ -22,25 +23,26 @@ import {
   joiValidateExamInputFields,
   joiValidateTimetableArray,
 } from '../utils/validation';
+import { studentResultQueue } from '../utils/queue';
 // import { saveLog } from '../logs/log.service';
 
-const getExamDocumentById = catchErrors(async (req, res) => {
+const getCbtAssessmentDocumentById = catchErrors(async (req, res) => {
   const { exam_document_id } = req.params;
-  const result = await fetchExamDocumentById(exam_document_id);
+  const result = await fetchCbtAssessmentDocumentById(exam_document_id);
 
   if (!result) {
     throw new AppError('Unable to fetch exam document.', 400);
   }
 
   return res.status(201).json({
-    message: 'Exam document fetched successfully.',
+    message: 'Cbt assessment document fetched successfully.',
     status: 201,
     success: true,
     exam_document: result,
   });
 });
 
-const getAllExamDocument = catchErrors(async (req, res) => {
+const getAllCbtAssessmentDocument = catchErrors(async (req, res) => {
   const page = req.query.page ? Number(req.query.page) : undefined;
   const limit = req.query.limit ? Number(req.query.limit) : undefined;
 
@@ -51,25 +53,25 @@ const getAllExamDocument = catchErrors(async (req, res) => {
   console.log('limit:', limit);
   console.log('searchQuery:', searchQuery);
 
-  const result = await fetchAllExamDocument(page, limit, searchQuery);
+  const result = await fetchAllCbtAssessmentDocument(page, limit, searchQuery);
 
   if (!result) {
-    throw new AppError('Unable to fetch exam documents.', 400);
+    throw new AppError('Unable to fetch Cbt assessment documents.', 400);
   }
 
   return res.status(201).json({
-    message: 'Exam document fetched successfully.',
+    message: 'Cbt assessment document fetched successfully.',
     status: 201,
     success: true,
     exam_documents: result,
   });
 });
 
-const createTermExamDocument = catchErrors(async (req, res) => {
+const createTermCbtAssessmentDocument = catchErrors(async (req, res) => {
   console.log('req.body:', req.body);
   const { academic_session_id, term } = req.params;
   const {
-    title,
+    assessment_type,
     number_of_questions_per_student,
     min_obj_questions,
     max_obj_questions,
@@ -88,7 +90,7 @@ const createTermExamDocument = catchErrors(async (req, res) => {
     min_obj_questions,
     max_obj_questions,
     expected_obj_number_of_options,
-    title,
+    assessment_type,
     number_of_questions_per_student,
   };
 
@@ -103,66 +105,78 @@ const createTermExamDocument = catchErrors(async (req, res) => {
   const payload = {
     academic_session_id,
     term,
-    title: value.title,
+    assessment_type: value.assessment_type,
     min_obj_questions: value.min_obj_questions,
     max_obj_questions: value.max_obj_questions,
     expected_obj_number_of_options: value.expected_obj_number_of_options,
     number_of_questions_per_student: value.number_of_questions_per_student,
   };
 
-  const result = await termExamDocumentCreation(payload);
+  const result = await termCbtAssessmentDocumentCreation(payload);
 
   if (!result) {
-    throw new AppError('Unable to create exam document for the term.', 400);
+    throw new AppError(
+      'Unable to create cbt assessment document for the term.',
+      400
+    );
   }
 
   return res.status(201).json({
-    message: 'Exam document created successfully.',
+    message: 'Cbt assessment document created successfully.',
     status: 201,
     success: true,
     exam_document: result,
   });
 });
 
-const getTermExamDocument = catchErrors(async (req, res) => {
+const getTermCbtAssessmentDocument = catchErrors(async (req, res) => {
   // const start = Date.now();
 
-  const { academic_session_id, term } = req.params;
+  const { academic_session_id, term, assessment_type } = req.params;
 
   if (!academic_session_id) {
     throw new AppError('Academic session is required to proceed.', 400);
   }
 
   if (!term) {
-    throw new AppError('Academic session is required to proceed.', 400);
+    throw new AppError('Term is required to proceed.', 400);
+  }
+
+  if (!assessment_type) {
+    throw new AppError('Assessment type is required to proceed.', 400);
   }
 
   const payload = {
     academic_session_id,
     term,
+    assessment_type,
   };
 
-  const result = await fetchTermExamDocument(payload);
+  const result = await fetchTermCbtAssessmentDocument(payload);
 
   if (!result) {
-    throw new AppError('Unable to get exam document for the term.', 400);
+    throw new AppError(
+      'Unable to get CBT assessment document for the term.',
+      400
+    );
   }
 
   return res.status(201).json({
-    message: 'Term exam document fetched successfully..',
+    message: `${assessment_type} CBT assessment document fetched successfully..`,
     status: 201,
     success: true,
     exam_document: result,
   });
 });
 
-const getTermClassExamTimetable = catchErrors(async (req, res) => {
-  const { academic_session_id, class_id, term } = req.params;
+const getTermClassCbtAssessmentTimetable = catchErrors(async (req, res) => {
+  const { academic_session_id, class_id, term, assessment_type } = req.params;
 
   const requiredFields = {
     academic_session_id,
     class_id,
     term,
+    assessment_type,
   };
 
   const missingField = Object.entries(requiredFields).find(
@@ -180,23 +194,27 @@ const getTermClassExamTimetable = catchErrors(async (req, res) => {
     academic_session_id,
     class_id,
     term,
+    assessment_type,
   };
 
-  const result = await fetchTermClassExamTimetable(payload);
+  const result = await fetchTermClassCbtAssessmentTimetable(payload);
 
   if (!result) {
-    throw new AppError('Unable to get exam timetable for this class.', 400);
+    throw new AppError(
+      'Unable to get Cbt assessment timetable for this class.',
+      400
+    );
   }
 
   return res.status(201).json({
-    message: `Exam timetable fetched successfully.`,
+    message: `Cbt assessment timetable fetched successfully.`,
     status: 201,
     success: true,
     timetable: result,
   });
 });
 
-const getAllClassExamTimetables = catchErrors(async (req, res) => {
+const getAllClassCbtAssessmentTimetables = catchErrors(async (req, res) => {
   const { class_id } = req.params;
   console.log('class_id:', class_id);
 
@@ -219,25 +237,28 @@ const getAllClassExamTimetables = catchErrors(async (req, res) => {
     class_id,
   };
 
-  const result = await fetchAllClassExamTimetables(payload);
+  const result = await fetchAllClassCbtAssessmentTimetables(payload);
 
   if (!result) {
-    throw new AppError('Unable to get exam timetable for this class.', 400);
+    throw new AppError(
+      'Unable to get Cbt assessment timetable for this class.',
+      400
+    );
   }
 
   return res.status(201).json({
-    message: `Exam timetable fetched successfully.`,
+    message: `Cbt assessment timetable fetched successfully.`,
     status: 201,
     success: true,
     timetable: result,
   });
 });
 
-const createTermClassExamTimetable = catchErrors(async (req, res) => {
+const createTermClassCbtAssessmentTimetable = catchErrors(async (req, res) => {
   const start = Date.now();
 
   const { academic_session_id, class_id } = req.params;
-  const { term, timetable_array } = req.body;
+  const { term, timetable_array, assessment_type } = req.body;
 
   const user_id = req.user?.userId;
   const userRole = req.user?.userRole;
@@ -250,6 +271,7 @@ const createTermClassExamTimetable = catchErrors(async (req, res) => {
     academic_session_id,
     class_id,
     term,
+    assessment_type,
   };
 
   const missingField = Object.entries(requiredFields).find(
@@ -276,16 +298,17 @@ const createTermClassExamTimetable = catchErrors(async (req, res) => {
     timetable: validateTimetableArray.value,
     user_id,
     userRole,
+    assessment_type,
   };
 
-  const result = await termClassExamTimetableCreation(payload);
+  const result = await termClassCbtAssessmentTimetableCreation(payload);
 
   if (!result) {
-    throw new AppError('Unable to create exam timetable.', 400);
+    throw new AppError('Unable to create Cbt assessment timetable.', 400);
   }
 
   return res.status(201).json({
-    message: `Exam timetable created successfully.`,
+    message: `Cbt assessment timetable created successfully.`,
     status: 201,
     success: true,
     timetable: result,
@@ -295,7 +318,7 @@ const createTermClassExamTimetable = catchErrors(async (req, res) => {
 const setSubjectCbtObjQuestionsForAClass = catchErrors(async (req, res) => {
   console.log('req.body:', req.body);
   const { academic_session_id, class_id } = req.params;
-  const { questions_array, term, subject_id } = req.body;
+  const { questions_array, term, subject_id, assessment_type } = req.body;
 
   if (!Array.isArray(questions_array) || questions_array.length === 0) {
     throw new AppError('Questions are required.', 400);
@@ -313,6 +336,7 @@ const setSubjectCbtObjQuestionsForAClass = catchErrors(async (req, res) => {
     questions_array,
     term,
     subject_id,
+    assessment_type,
   };
 
   const missingField = Object.entries(requiredFields).find(
@@ -341,16 +365,20 @@ const setSubjectCbtObjQuestionsForAClass = catchErrors(async (req, res) => {
     term,
     subject_id,
     teacher_id,
+    assessment_type,
   };
 
   const result = await objQestionSetting(payload);
 
   if (!result) {
-    throw new AppError('Unable to store exam questions for this subject.', 400);
+    throw new AppError(
+      'Unable to store Cbt assessment questions for this subject.',
+      400
+    );
   }
 
   return res.status(201).json({
-    message: `Exam questions submitted for ${result.subject_name}`,
+    message: `Cbt assessment questions submitted for ${result.subject_name}`,
     status: 201,
     success: true,
   });
@@ -359,7 +387,7 @@ const setSubjectCbtObjQuestionsForAClass = catchErrors(async (req, res) => {
 const classTeacherAuthorizeStudentsToWriteSubjectCbt = catchErrors(
   async (req, res) => {
     const { subject_id, academic_session_id, class_id } = req.params;
-    const { students_id_array, term } = req.body;
+    const { students_id_array, term, assessment_type } = req.body;
 
     if (!Array.isArray(students_id_array) || students_id_array.length === 0) {
       throw new AppError(
@@ -380,6 +408,7 @@ const classTeacherAuthorizeStudentsToWriteSubjectCbt = catchErrors(
       academic_session_id,
       class_id,
       students_id_array,
+      assessment_type,
     };
 
     const missingField = Object.entries(requiredFields).find(
@@ -400,9 +429,10 @@ const classTeacherAuthorizeStudentsToWriteSubjectCbt = catchErrors(
       class_id,
       teacher_id,
       students_id_array,
+      assessment_type,
     };
 
-    const result = await studentCbtSubjectExamAuthorization(payload);
+    const result = await studentCbtSubjectCbtAssessmentAuthorization(payload);
 
     if (!result) {
       throw new AppError(
@@ -420,56 +450,61 @@ const classTeacherAuthorizeStudentsToWriteSubjectCbt = catchErrors(
   }
 );
 
-const startSubjectCbtObjExamForAClass = catchErrors(async (req, res) => {
-  const { term, subject_id, academic_session_id, class_id } = req.params;
+const startSubjectCbtObjCbtAssessmentForAClass = catchErrors(
+  async (req, res) => {
+    const { term, subject_id, academic_session_id, class_id, assessment_type } =
+      req.params;
 
-  const student_id = req.user?.userId;
+    const student_id = req.user?.userId;
 
-  if (!student_id) {
-    throw new AppError('Please login to continue.', 400);
-  }
+    if (!student_id) {
+      throw new AppError('Please login to continue.', 400);
+    }
 
-  const requiredFields = {
-    academic_session_id,
-    class_id,
-    term,
-    subject_id,
-  };
+    const requiredFields = {
+      academic_session_id,
+      class_id,
+      term,
+      subject_id,
+      assessment_type,
+    };
 
-  const missingField = Object.entries(requiredFields).find(
-    ([key, value]) => !value
-  );
-
-  if (missingField) {
-    throw new AppError(
-      `Please provide ${missingField[0].replace('_', ' ')} to proceed.`,
-      400
+    const missingField = Object.entries(requiredFields).find(
+      ([key, value]) => !value
     );
+
+    if (missingField) {
+      throw new AppError(
+        `Please provide ${missingField[0].replace('_', ' ')} to proceed.`,
+        400
+      );
+    }
+
+    const payload = {
+      academic_session_id,
+      class_id,
+      student_id,
+      term,
+      subject_id,
+      assessment_type,
+    };
+
+    const result = await subjectCbtObjCbtAssessmentStarting(payload);
+
+    if (!result) {
+      throw new AppError('Unable to Cbt assessment questions.', 400);
+    }
+
+    return res.status(200).json({
+      message: `Cbt assessment started successfully.`,
+      status: 200,
+      success: true,
+      questions: result,
+    });
   }
+);
 
-  const payload = {
-    academic_session_id,
-    class_id,
-    student_id,
-    term,
-    subject_id,
-  };
-
-  const result = await subjectCbtObjExamStarting(payload);
-
-  if (!result) {
-    throw new AppError('Unable to exam questions.', 400);
-  }
-
-  return res.status(200).json({
-    message: `Exam started successfully.`,
-    status: 200,
-    success: true,
-    questions: result,
-  });
-});
-
-const updateSubjectCbtObjExamRemainingTimeForAClass = catchErrors(
+const updateSubjectCbtObjCbtAssessmentRemainingTimeForAClass = catchErrors(
   async (req, res) => {
     const { cbt_result_id, exam_id } = req.params;
     const { remaining_time } = req.body;
@@ -504,14 +539,14 @@ const updateSubjectCbtObjExamRemainingTimeForAClass = catchErrors(
       student_id,
     };
 
-    const result = await subjectCbtObjExamRemainingTimeUpdate(payload);
+    const result = await subjectCbtObjCbtAssessmentRemainingTimeUpdate(payload);
 
     // if (!result) {
     //   throw new AppError('Unable to update exam remaining time.', 400);
     // }
 
     return res.status(200).json({
-      message: `Exam time updated successfully.`,
+      message: `Cbt assessment time updated successfully.`,
       status: 200,
       success: true,
       // questions: result && result,
@@ -519,7 +554,7 @@ const updateSubjectCbtObjExamRemainingTimeForAClass = catchErrors(
   }
 );
 
-const updateSubjectCbtObjExamAnswersForAClass = catchErrors(
+const updateSubjectCbtObjCbtAssessmentAnswersForAClass = catchErrors(
   async (req, res) => {
     const { cbt_result_id, exam_id } = req.params;
     const { result_doc } = req.body;
@@ -558,14 +593,14 @@ const updateSubjectCbtObjExamAnswersForAClass = catchErrors(
       student_id,
     };
 
-    const result = await subjectCbtObjExamUpdate(payload);
+    const result = await subjectCbtObjCbtAssessmentUpdate(payload);
 
     // if (!result) {
     //   throw new AppError('Unable to update exam.', 400);
     // }
 
     return res.status(200).json({
-      message: `Exam answers updated successfully.`,
+      message: `Cbt assessment answers updated successfully.`,
       status: 200,
       success: true,
       questions: result && result,
@@ -573,62 +608,75 @@ const updateSubjectCbtObjExamAnswersForAClass = catchErrors(
   }
 );
 
-const submitSubjectCbtObjExamForAClass = catchErrors(async (req, res) => {
-  const { cbt_result_id, exam_id } = req.params;
-  const { result_doc, trigger_type } = req.body;
+const submitSubjectCbtObjCbtAssessmentForAClass = catchErrors(
+  async (req, res) => {
+    const { cbt_result_id, exam_id } = req.params;
+    const { result_doc, trigger_type } = req.body;
 
-  console.log('trigger type:', trigger_type);
-  console.log('req.body:', req.body);
+    console.log('trigger type:', trigger_type);
+    console.log('req.body:', req.body);
 
-  const student_id = req.user?.userId;
+    const student_id = req.user?.userId;
 
-  if (!student_id) {
-    throw new AppError('Please login to continue.', 400);
-  }
+    if (!student_id) {
+      throw new AppError('Please login to continue.', 400);
+    }
 
-  if (!triggerTypeEnum.includes(trigger_type)) {
-    throw new AppError('Invalid trigger type.', 400);
-  }
+    if (!triggerTypeEnum.includes(trigger_type)) {
+      throw new AppError('Invalid trigger type.', 400);
+    }
 
-  const requiredFields = {
-    cbt_result_id,
-    exam_id,
-    result_doc,
-    trigger_type,
-  };
+    const requiredFields = {
+      cbt_result_id,
+      exam_id,
+      result_doc,
+      trigger_type,
+    };
 
-  const missingField = Object.entries(requiredFields).find(
-    ([key, value]) => !value
-  );
-
-  if (missingField) {
-    throw new AppError(
-      `Please provide ${missingField[0].replace('_', ' ')} to proceed.`,
-      400
+    const missingField = Object.entries(requiredFields).find(
+      ([key, value]) => !value
     );
+
+    if (missingField) {
+      throw new AppError(
+        `Please provide ${missingField[0].replace('_', ' ')} to proceed.`,
+        400
+      );
+    }
+
+    const payload = {
+      cbt_result_id,
+      exam_id,
+      result_doc,
+      student_id,
+      trigger_type,
+    };
+
+    const name = 'cbt-assessment-submission';
+    const data = payload;
+    const opts = {
+      attempts: 5,
+      removeOnComplete: true,
+      backoff: {
+        type: 'exponential',
+        delay: 3000,
+      },
+    };
+
+    const result = await studentResultQueue.add(name, data, opts);
+
+    if (!result) {
+      throw new AppError('Unable to end and update Cbt assessment.', 400);
+    }
+
+    return res.status(200).json({
+      message: `Cbt assessment submitted successfully.`,
+      status: 200,
+      success: true,
+      questions: result,
+    });
   }
-
-  const payload = {
-    cbt_result_id,
-    exam_id,
-    result_doc,
-    student_id,
-    trigger_type,
-  };
-
-  const result = await subjectCbtObjExamSubmission(payload);
-
-  if (!result) {
-    throw new AppError('Unable to end and update exam.', 400);
-  }
-
-  return res.status(200).json({
-    message: `Exam submitted successfully.`,
-    status: 200,
-    success: true,
-    questions: result,
-  });
-});
+);
 
 const setSubjectCbtTheroyQuestionsForAClass = catchErrors(async (req, res) => {
   const { academic_session_id, class_id } = req.params;
@@ -661,18 +709,18 @@ const setSubjectCbtTheroyQuestionsForAClass = catchErrors(async (req, res) => {
 });
 
 export {
-  getExamDocumentById,
-  getAllClassExamTimetables,
-  getTermClassExamTimetable,
-  getTermExamDocument,
-  submitSubjectCbtObjExamForAClass,
-  updateSubjectCbtObjExamAnswersForAClass,
-  updateSubjectCbtObjExamRemainingTimeForAClass,
+  getCbtAssessmentDocumentById,
+  getAllClassCbtAssessmentTimetables,
+  getTermClassCbtAssessmentTimetable,
+  getTermCbtAssessmentDocument,
+  submitSubjectCbtObjCbtAssessmentForAClass,
+  updateSubjectCbtObjCbtAssessmentAnswersForAClass,
+  updateSubjectCbtObjCbtAssessmentRemainingTimeForAClass,
   classTeacherAuthorizeStudentsToWriteSubjectCbt,
-  createTermClassExamTimetable,
-  startSubjectCbtObjExamForAClass,
+  createTermClassCbtAssessmentTimetable,
+  startSubjectCbtObjCbtAssessmentForAClass,
   setSubjectCbtObjQuestionsForAClass,
-  createTermExamDocument,
+  createTermCbtAssessmentDocument,
   setSubjectCbtTheroyQuestionsForAClass,
-  getAllExamDocument,
+  getAllCbtAssessmentDocument,
 };

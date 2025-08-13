@@ -8,11 +8,12 @@ import {
   TermResult,
   CumScoreParamType,
   ResultJobData,
-  ExamJobData,
+  CbtAssessmentJobData,
   SubjectPositionJobData,
   SubjectCumScoreJobData,
   SubjectResultDocument,
   SubjectTermResult,
+  CbtAssessmentEndedType,
 } from '../constants/types';
 import Class from '../models/class.model';
 import ClassEnrolment from '../models/classes_enrolment.model';
@@ -23,6 +24,7 @@ import Student from '../models/students.model';
 import { AppError } from '../utils/app.error';
 import { calculateSubjectSumAndGrade } from '../utils/functions';
 import { SubjectResult } from '../models/subject_result.model';
+import { subjectCbtObjCbtAssessmentSubmission } from '../services/cbt.service';
 
 const createResult = async (payload: ResultCreationType) => {
   try {
@@ -637,7 +639,9 @@ const processStudentResultUpdate = async (payload: ResultJobData) => {
   }
 };
 
-const processStudentExamResultUpdate = async (payload: ExamJobData) => {
+const processStudentExamResultUpdate = async (
+  payload: CbtAssessmentJobData
+) => {
   const {
     term,
     session_id,
@@ -889,7 +893,22 @@ const processSubjectCumScoreUpdate = async (
   }
 };
 
+const processCbtAssessmentSubmission = async (
+  payload: CbtAssessmentEndedType
+) => {
+  try {
+    const cbtAssessmentSubmission = await subjectCbtObjCbtAssessmentSubmission(
+      payload
+    );
+
+    return cbtAssessmentSubmission;
+  } catch (error) {
+    throw error;
+  }
+};
+
 export {
+  processCbtAssessmentSubmission,
   processStudentExamResultUpdate,
   processStudentResultUpdate,
   processStudentSubjectPositionUpdate,

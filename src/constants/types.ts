@@ -2327,8 +2327,8 @@ type FeatureKeyType =
 
 type AccessModeType = 'any' | 'all';
 
-type ExamDocumentCreationType = {
-  title: string;
+type CbtAssessmentDocumentCreationType = {
+  assessment_type: string;
   academic_session_id: string;
   term: string;
   min_obj_questions: number;
@@ -2337,12 +2337,12 @@ type ExamDocumentCreationType = {
   number_of_questions_per_student: number;
 };
 
-type CbtExamDocument = {
+type CbtAssessmentDocument = {
   is_active: boolean;
   // school: mongoose.Types.ObjectId;
   academic_session_id: mongoose.Types.ObjectId;
   term: string;
-  title: string;
+  assessment_type: string;
   min_obj_questions: number;
   expected_obj_number_of_options: number;
   max_obj_questions: number;
@@ -2374,20 +2374,22 @@ type SubjectObjQuestionDocumentCreationType = {
   questions_array: ObjQuestionType[];
   term: string;
   subject_id: string;
+  assessment_type: string;
 };
 
-type ExamInputFieldsType = {
+type CbtAssessmentInputFieldsType = {
   min_obj_questions: number;
   max_obj_questions: number;
   expected_obj_number_of_options: number;
-  title: string;
+  assessment_type: string;
   number_of_questions_per_student: number;
 };
 
-type ExamStartingType = {
+type CbtAssessmentStartingType = {
   academic_session_id: string;
   subject_id: string;
   class_id: string;
+  assessment_type: string;
   student_id: mongoose.Types.ObjectId;
   term: string;
 };
@@ -2402,38 +2404,40 @@ type ResultDocType = {
   >[];
 };
 
-type ExamUpdateCommonType = {
+type CbtAssessmentUpdateCommonType = {
   cbt_result_id: string;
   exam_id: string;
   student_id: mongoose.Types.ObjectId;
 };
 
-type ExamUpdateType = ExamUpdateCommonType & {
+type CbtAssessmentUpdateType = CbtAssessmentUpdateCommonType & {
   result_doc: Omit<
     ShuffledObjQuestionsDocument,
     'question_original_number, correct_answer, question_shuffled_number, question_original_number'
   >[];
 };
 
-type ExamTimeUpdateType = ExamUpdateCommonType & {
+type CbtAssessmentTimeUpdateType = CbtAssessmentUpdateCommonType & {
   remaining_time: number;
 };
 
-type ExamEndedType = ExamUpdateCommonType & {
+type CbtAssessmentEndedType = CbtAssessmentUpdateCommonType & {
   trigger_type: 'manual' | 'time_up' | 'cutoff';
   result_doc: ResultDocType;
 };
 
-type GetClassExamTimetablePayloadType = {
+type GetClassCbtAssessmentTimetablePayloadType = {
   academic_session_id: string;
   class_id: string;
   term: string;
+  assessment_type: string;
 };
 
-type ClassExamTimetablePayloadType = {
+type ClassCbtAssessmentTimetablePayloadType = {
   // exam_id: string;
 
   userRole: string;
+  assessment_type: string;
   academic_session_id: string;
   class_id: string;
   user_id: mongoose.Types.ObjectId;
@@ -2450,12 +2454,13 @@ type ClassExamTimetablePayloadType = {
 //   theory_duration: number;
 // };
 
-type ClassExamTimetableDocument = Document & {
+type ClassCbtAssessmentTimetableDocument = Document & {
   // school: mongoose.Types.ObjectId;
   exam_id: mongoose.Types.ObjectId;
   academic_session_id: mongoose.Types.ObjectId;
   class_id: mongoose.Types.ObjectId;
   term: string;
+  assessment_type: string;
   scheduled_subjects: SingleSubjectTimetableDocument[];
 };
 
@@ -2596,18 +2601,20 @@ type LogPayloadType = {
   duration_ms: number;
 };
 
-type ExamAuthorizationPayloadType = {
+type CbtAssessmentAuthorizationPayloadType = {
   subject_id: string;
   term: string;
   academic_session_id: string;
   class_id: string;
+  assessment_type: string;
   teacher_id: mongoose.Types.ObjectId;
   students_id_array: mongoose.Types.ObjectId[];
 };
 
-type ExamDocumentPayload = {
+type CbtAssessmentDocumentPayload = {
   academic_session_id: string;
   term: string;
+  assessment_type: string;
 };
 
 type FetchAttendanceType = {
@@ -2681,7 +2688,7 @@ type ResultJobData = ResultCommonJobData & {
   score_name: string;
 };
 
-type ExamJobData = ResultCommonJobData & {
+type CbtAssessmentJobData = ResultCommonJobData & {
   resultObj: ExamScoreType;
   exam_component_name: string;
   term_results: SubjectTermResult[];
@@ -2716,14 +2723,14 @@ type SubjectDocument = Document & {
 export {
   ExamScoreType,
   ResultJobData,
-  ExamJobData,
+  CbtAssessmentJobData,
   SubjectPositionJobData,
   SubjectCumScoreJobData,
   PaystackPayloadType,
   PaystackSchoolPaymentType,
-  ExamEndedType,
-  ExamUpdateType,
-  ExamAuthorizationPayloadType,
+  CbtAssessmentEndedType,
+  CbtAssessmentUpdateType,
+  CbtAssessmentAuthorizationPayloadType,
   LogPayloadType,
   LogDocument,
   CutoffMinutesCreationPayload,
@@ -2731,16 +2738,16 @@ export {
   CbtCutoffDocument,
   CbtResultDocument,
   CbtQuestionDocument,
-  ClassExamTimetableDocument,
-  ClassExamTimetablePayloadType,
+  ClassCbtAssessmentTimetableDocument,
+  ClassCbtAssessmentTimetablePayloadType,
   TimetableArrayType,
-  ExamStartingType,
-  ExamInputFieldsType,
+  CbtAssessmentStartingType,
+  CbtAssessmentInputFieldsType,
   ObjQuestionType,
   SubjectObjQuestionDocumentCreationType,
   ClassLevelArrayType,
-  CbtExamDocument,
-  ExamDocumentCreationType,
+  CbtAssessmentDocument,
+  CbtAssessmentDocumentCreationType,
   AccessModeType,
   FeatureKeyType,
   ContactUsType,
@@ -2751,7 +2758,7 @@ export {
   ScoreRecordingParamType,
   ClassPositionCalType,
   SubjectResultType,
-  ExamTimeUpdateType,
+  CbtAssessmentTimeUpdateType,
   StudentResultPopulatedType,
   StudentSubjectPositionType,
   CumScoreParamType,
@@ -2793,7 +2800,7 @@ export {
   StudentDocument,
   SubjectOfferedType,
   UserReturn,
-  ExamDocumentPayload,
+  CbtAssessmentDocumentPayload,
   StudentClassByIdPayloadType,
   StudentClassPayloadType,
   TeacherSubjectType,
@@ -2889,7 +2896,7 @@ export {
   AsyncHandler,
   AdmissionValidationType,
   User,
-  GetClassExamTimetablePayloadType,
+  GetClassCbtAssessmentTimetablePayloadType,
   ComparePassType,
   CreateSubjectType,
   UserDocument,
