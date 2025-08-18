@@ -36,7 +36,7 @@ router.post(
 router.get(
   '/all-exam-documents',
   // requireFeatureAccess(['objective_exam', 'theory_exam'], 'any'),
-  permission(['super_admin']),
+  permission(['super_admin', 'teacher', 'admin']),
   getAllCbtAssessmentDocument
 );
 
@@ -50,7 +50,7 @@ router.get(
 router.get(
   '/get-term-exam-document/:academic_session_id/:term',
   // requireFeatureAccess(['objective_exam', 'theory_exam'], 'any'),
-  permission(['super_admin', 'teacher', 'student', 'admin']),
+  permission(['super_admin', 'teacher', 'admin']),
   getTermCbtAssessmentDocument
 );
 
