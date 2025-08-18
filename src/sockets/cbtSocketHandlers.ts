@@ -24,14 +24,8 @@ export const registerCbtHandlers = (io: Server, socket: Socket) => {
 
   socket.on('start-exam', async (payload, callback) => {
     try {
-      const {
-        accessToken,
-        assessment_type,
-        term,
-        subject_id,
-        academic_session_id,
-        class_id,
-      } = payload;
+      const { accessToken, term, subject_id, academic_session_id, class_id } =
+        payload;
       if (!accessToken) {
         return callback({ status: 'error', message: 'Access token missing' });
       }
@@ -53,7 +47,6 @@ export const registerCbtHandlers = (io: Server, socket: Socket) => {
         academic_session_id,
         class_id,
         student_id: userId,
-        assessment_type,
       };
 
       const result = await subjectCbtObjCbtAssessmentStarting(fullPayload);

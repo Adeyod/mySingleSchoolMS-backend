@@ -15,7 +15,7 @@ const cbtExamSchema = new mongoose.Schema<CbtAssessmentDocument>(
     expected_obj_number_of_options: { type: Number, required: true },
 
     // Core exam info
-    assessment_type: { type: String, required: true },
+    assessment_type: { type: String, required: true, trim: true },
     is_active: { type: Boolean, default: true },
   },
   {

@@ -74,15 +74,32 @@ const termCbtAssessmentDocumentCreation = async (
       );
     }
 
+    const existingActiveAssessmentDocument = await CbtExam.find({
+      academic_session_id: academic_session_id,
+      term: term,
+      is_active: true,
+    });
+
+    if (existingActiveAssessmentDocument.length > 0) {
+      await CbtExam.updateMany(
+        {
+          academic_session_id: academic_session_id,
+          term: term,
+          is_active: true,
+        },
+        { $set: { is_active: false } }
+      );
+    }
+
     const examDocExist = await CbtExam.findOne({
       academic_session_id: academic_session_id,
       term: term,
-      assessment_type: assessment_type, // this will now be the header of the result
+      assessment_type: assessment_type.toLowerCase().trim(),
     });
 
     if (examDocExist) {
       throw new AppError(
-        `${term} ${assessment_type} document already created.`,
+        `${assessment_type} document already created in this term.`,
         400
       );
     }
@@ -90,7 +107,7 @@ const termCbtAssessmentDocumentCreation = async (
     const newExamDoc = new CbtExam({
       academic_session_id: academic_session_id,
       term: term,
-      assessment_type: assessment_type,
+      assessment_type: assessment_type.toLowerCase(),
       min_obj_questions: min_obj_questions,
       max_obj_questions: max_obj_questions,
       number_of_questions_per_student: number_of_questions_per_student,
@@ -114,7 +131,7 @@ const fetchTermCbtAssessmentDocument = async (
   payload: CbtAssessmentDocumentPayload
 ) => {
   try {
-    const { academic_session_id, term, assessment_type } = payload;
+    const { academic_session_id, term } = payload;
 
     const academicSessionId = Object(academic_session_id);
 
@@ -143,14 +160,11 @@ const fetchTermCbtAssessmentDocument = async (
     const examDocExist = await CbtExam.findOne({
       academic_session_id: academic_session_id,
       term: term,
-      assessment_type: assessment_type,
+      is_active: true,
     });
 
     if (!examDocExist) {
-      throw new AppError(
-        `No ${assessment_type} document found for ${term}.`,
-        400
-      );
+      throw new AppError(`No assessment document found for ${term}.`, 400);
     }
 
     return examDocExist;
@@ -183,12 +197,13 @@ const fetchCbtAssessmentDocumentById = async (cbt_document_id: string) => {
   }
 };
 
-const fetchAllClassCbtAssessmentTimetables = async (payload: {
-  class_id: string;
-}) => {
+const fetchAllClassCbtAssessmentTimetables = async (
+  class_id: string,
+  page?: number,
+  limit?: number,
+  searchParams = ''
+) => {
   try {
-    const { class_id } = payload;
-
     const classId = Object(class_id);
 
     const classExist = await Class.findById(classId);
@@ -197,18 +212,48 @@ const fetchAllClassCbtAssessmentTimetables = async (payload: {
       throw new AppError('Class does not exist.', 404);
     }
 
-    const timetableExist = await ClassExamTimetable.find({
-      class_id: classExist._id,
-    }).populate('scheduled_subjects.subject_id');
+    let query = ClassExamTimetable.find({}).sort({ createdAt: -1 });
 
-    if (!timetableExist) {
+    if (searchParams?.trim()) {
+      const regex = new RegExp(searchParams, 'i');
+
+      query = query.where({
+        $or: [
+          { term: { $regex: regex } },
+          { assessment_type: { $regex: regex } },
+        ],
+      });
+    }
+
+    const count = await query.clone().countDocuments();
+    let pages = 1;
+
+    if (page && limit && count !== 0) {
+      const offset = (page - 1) * limit;
+      query = query.skip(offset).limit(limit);
+      pages = Math.ceil(count / limit);
+
+      if (page > pages) {
+        throw new AppError('Pages can not be found.', 404);
+      }
+    }
+
+    const timetableExist = await query
+      .sort({ createdAt: -1 })
+      .populate('scheduled_subjects.subject_id');
+
+    if (!timetableExist || timetableExist.length === 0) {
       throw new AppError(
         `${classExist.name} does not have CBT assessment timetable.`,
         400
       );
     }
 
-    return timetableExist;
+    return {
+      timetableExist: timetableExist,
+      totalCount: count,
+      totalPages: pages,
+    };
   } catch (error) {
     if (error instanceof AppError) {
       throw new AppError(`${error.message}`, 400);
@@ -224,7 +269,7 @@ const fetchTermClassCbtAssessmentTimetable = async (
   payload: GetClassCbtAssessmentTimetablePayloadType
 ) => {
   try {
-    const { academic_session_id, class_id, term, assessment_type } = payload;
+    const { academic_session_id, class_id, term } = payload;
 
     const classId = Object(class_id);
     const academicSessionId = Object(academic_session_id);
@@ -257,21 +302,20 @@ const fetchTermClassCbtAssessmentTimetable = async (
       throw new AppError('Class does not exist.', 404);
     }
 
-    const timetableExist = await ClassExamTimetable.findOne({
+    const timetableExists = await ClassExamTimetable.findOne({
       class_id: classExist._id,
       academic_session_id: academicSessionExist._id,
       term: term,
-      assessment_type,
     }).populate('scheduled_subjects.subject_id');
 
-    if (!timetableExist) {
+    if (!timetableExists) {
       throw new AppError(
         `${classExist.name} does not have exam timetable for ${term}.`,
         400
       );
     }
 
-    return timetableExist;
+    return timetableExists;
   } catch (error) {
     if (error instanceof AppError) {
       throw new AppError(`${error.message}`, 400);
@@ -293,7 +337,6 @@ const termClassCbtAssessmentTimetableCreation = async (
       userRole,
       term,
       timetable,
-      assessment_type,
     } = payload;
 
     const classId = Object(class_id);
@@ -396,19 +439,12 @@ const termClassCbtAssessmentTimetableCreation = async (
     const cbtExamExist = await CbtExam.findOne({
       academic_session_id: academicSessionExist._id,
       term: term,
-      assessment_type: assessment_type,
+      is_active: true,
     });
 
     if (!cbtExamExist) {
       throw new AppError(
-        `Reach out to the school management to initialize ${assessment_type} processes before continuing.`,
-        400
-      );
-    }
-
-    if (cbtExamExist.is_active !== true) {
-      throw new AppError(
-        `${assessment_type} timetable can not be created because the time for it for the selected term has ended.`,
+        `Reach out to the school management to initialize processes before continuing.`,
         400
       );
     }
@@ -417,15 +453,15 @@ const termClassCbtAssessmentTimetableCreation = async (
       class_id: classExist._id,
       academic_session_id: academicSessionExist._id,
       term: term,
-      assessment_type: assessment_type,
+      assessment_type: cbtExamExist.assessment_type,
     });
 
-    // if (timetableExist) {
-    //   throw new AppError(
-    //     `${classExist.name} already have exam timetable for ${term}.`,
-    //     400
-    //   );
-    // }
+    if (timetableExist) {
+      throw new AppError(
+        `${classExist.name} already have ${timetableExist.assessment_type} timetable for ${term}.`,
+        400
+      );
+    }
 
     const schoolCutoffTimeExist = await CbtCutoff.findOne();
 
@@ -523,7 +559,7 @@ const termClassCbtAssessmentTimetableCreation = async (
       class_id: classExist._id,
       academic_session_id: academicSessionExist._id,
       term: term,
-      assessment_type: assessment_type,
+      assessment_type: cbtExamExist.assessment_type,
       scheduled_subjects: timetable,
     });
 
@@ -552,7 +588,10 @@ const fetchAllCbtAssessmentDocument = async (
       const regex = new RegExp(searchParams, 'i');
 
       query = query.where({
-        $or: [{ term: { $regex: regex } }, { title: { $regex: regex } }],
+        $or: [
+          { term: { $regex: regex } },
+          { assessment_type: { $regex: regex } },
+        ],
       });
     }
 
@@ -599,7 +638,6 @@ const objQestionSetting = async (
       term,
       subject_id,
       teacher_id,
-      assessment_type,
     } = payload;
 
     const classId = Object(class_id);
@@ -674,7 +712,7 @@ const objQestionSetting = async (
     const examDocExist = await CbtExam.findOne({
       academic_session_id: academicSessionExist._id,
       term: term,
-      assessment_type: assessment_type,
+      is_active: true,
     });
 
     if (!examDocExist) {
@@ -689,19 +727,19 @@ const objQestionSetting = async (
       academic_session_id: academicSessionExist._id,
       class_id: classExist._id,
       term: term,
-      assessment_type: assessment_type,
+      assessment_type: examDocExist.assessment_type,
     });
 
     if (!classExamTimetable) {
       throw new AppError(
-        `${assessment_type} Timetable has not been created for ${classExist.name} for ${term}. Please ensure that exam timetable has been created before setting questions.`,
+        `Assessment Timetable has not been created for ${classExist.name} for ${term}. Please ensure that assessment timetable has been created before setting questions.`,
         400
       );
     }
 
     if (classExamTimetable.exam_id.toString() !== examDocExist._id.toString()) {
       throw new AppError(
-        `The timetable found is not for ${assessment_type} CBT assessment.`,
+        `The timetable found does not match CBT assessment.`,
         400
       );
     }
@@ -767,7 +805,7 @@ const objQestionSetting = async (
 
     if (subjectQuestionExist && subjectQuestionExist.obj_questions.length > 0) {
       throw new AppError(
-        `${assessment_type} question has been submitted for ${subjectExist.name} in ${classExist.name}.`,
+        `${examDocExist.assessment_type} question has been submitted for ${subjectExist.name} in ${classExist.name}.`,
         400
       );
     }
@@ -857,7 +895,6 @@ const studentCbtSubjectCbtAssessmentAuthorization = async (
       academic_session_id,
       class_id,
       teacher_id,
-      assessment_type,
       students_id_array,
     } = payload;
 
@@ -957,12 +994,12 @@ const studentCbtSubjectCbtAssessmentAuthorization = async (
     const examDocExist = await CbtExam.findOne({
       academic_session_id: academicSessionExist._id,
       term: term,
-      assessment_type: assessment_type,
+      is_active: true,
     });
 
     if (!examDocExist) {
       throw new AppError(
-        `CBT assessment for ${assessment_type} has not being authorized to start.`,
+        `CBT assessment  has not being authorized to start.`,
         403
       );
     }
@@ -1014,7 +1051,7 @@ const studentCbtSubjectCbtAssessmentAuthorization = async (
       class_id: classExist._id,
       term: term,
       exam_id: questionExist.exam_id,
-      assessment_type: assessment_type,
+      assessment_type: examDocExist.assessment_type,
     });
 
     if (!actualExamTimeTable) {
@@ -1101,14 +1138,8 @@ const subjectCbtObjCbtAssessmentStarting = async (
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
-    const {
-      assessment_type,
-      academic_session_id,
-      class_id,
-      student_id,
-      term,
-      subject_id,
-    } = payload;
+    const { academic_session_id, class_id, student_id, term, subject_id } =
+      payload;
 
     const classId = Object(class_id);
     const studentId = Object(student_id);
@@ -1177,7 +1208,7 @@ const subjectCbtObjCbtAssessmentStarting = async (
     const examDocExist = await CbtExam.findOne({
       academic_session_id: academicSessionExist._id,
       term: term,
-      assessment_type: assessment_type,
+      is_active: true,
     }).session(session);
 
     if (!examDocExist) {
@@ -1336,7 +1367,7 @@ const subjectCbtObjCbtAssessmentStarting = async (
       class_id: classExist._id,
       term: term,
       exam_id: exam.exam_id,
-      assessment_type: assessment_type,
+      assessment_type: examDocExist.assessment_type,
     }).session(session);
 
     if (!actualExamTimeTable) {
@@ -1372,7 +1403,7 @@ const subjectCbtObjCbtAssessmentStarting = async (
         class_id: classExist._id,
         term: term,
         exam_id: exam.exam_id,
-        assessment_type: assessment_type,
+        assessment_type: examDocExist.assessment_type,
         'scheduled_subjects.subject_id': subject_id,
       },
       {

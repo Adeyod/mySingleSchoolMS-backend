@@ -82,6 +82,10 @@ const createTermCbtAssessmentDocument = catchErrors(async (req, res) => {
     throw new AppError('Academic session is required to proceed.', 400);
   }
 
+  if (!assessment_type) {
+    throw new AppError('Assessment type is required to proceed.', 400);
+  }
+
   if (!term) {
     throw new AppError('Academic session is required to proceed.', 400);
   }
@@ -132,7 +136,7 @@ const createTermCbtAssessmentDocument = catchErrors(async (req, res) => {
 const getTermCbtAssessmentDocument = catchErrors(async (req, res) => {
   // const start = Date.now();
 
-  const { academic_session_id, term, assessment_type } = req.params;
+  const { academic_session_id, term } = req.params;
 
   if (!academic_session_id) {
     throw new AppError('Academic session is required to proceed.', 400);
@@ -142,14 +146,9 @@ const getTermCbtAssessmentDocument = catchErrors(async (req, res) => {
     throw new AppError('Term is required to proceed.', 400);
   }
 
-  if (!assessment_type) {
-    throw new AppError('Assessment type is required to proceed.', 400);
-  }
-
   const payload = {
     academic_session_id,
     term,
-    assessment_type,
   };
 
   const result = await fetchTermCbtAssessmentDocument(payload);
@@ -162,21 +161,20 @@ const getTermCbtAssessmentDocument = catchErrors(async (req, res) => {
   }
 
   return res.status(201).json({
-    message: `${assessment_type} CBT assessment document fetched successfully..`,
+    message: `CBT assessment document fetched successfully..`,
     status: 201,
     success: true,
     exam_document: result,
   });
 });
 
-const getTermClassCbtAssessmentTimetable = catchErrors(async (req, res) => {
-  const { academic_session_id, class_id, term, assessment_type } = req.params;
+const getTermClassCbtAssessmentTimetables = catchErrors(async (req, res) => {
+  const { academic_session_id, class_id, term } = req.params;
 
   const requiredFields = {
     academic_session_id,
     class_id,
     term,
-    assessment_type,
   };
 
   const missingField = Object.entries(requiredFields).find(
@@ -194,7 +192,6 @@ const getTermClassCbtAssessmentTimetable = catchErrors(async (req, res) => {
     academic_session_id,
     class_id,
     term,
-    assessment_type,
   };
 
   const result = await fetchTermClassCbtAssessmentTimetable(payload);
@@ -218,6 +215,16 @@ const getAllClassCbtAssessmentTimetables = catchErrors(async (req, res) => {
   const { class_id } = req.params;
   console.log('class_id:', class_id);
 
+  const page = req.query.page ? Number(req.query.page) : undefined;
+  const limit = req.query.limit ? Number(req.query.limit) : undefined;
+
+  const searchQuery =
+    typeof req.query.searchParams === 'string' ? req.query.searchParams : '';
+
+  console.log('page:', page);
+  console.log('limit:', limit);
+  console.log('searchQuery:', searchQuery);
+
   const requiredFields = {
     class_id,
   };
@@ -233,11 +240,12 @@ const getAllClassCbtAssessmentTimetables = catchErrors(async (req, res) => {
     );
   }
 
-  const payload = {
+  const result = await fetchAllClassCbtAssessmentTimetables(
     class_id,
-  };
-
-  const result = await fetchAllClassCbtAssessmentTimetables(payload);
+    page,
+    limit,
+    searchQuery
+  );
 
   if (!result) {
     throw new AppError(
@@ -258,7 +266,7 @@ const createTermClassCbtAssessmentTimetable = catchErrors(async (req, res) => {
   const start = Date.now();
 
   const { academic_session_id, class_id } = req.params;
-  const { term, timetable_array, assessment_type } = req.body;
+  const { term, timetable_array } = req.body;
 
   const user_id = req.user?.userId;
   const userRole = req.user?.userRole;
@@ -271,7 +279,6 @@ const createTermClassCbtAssessmentTimetable = catchErrors(async (req, res) => {
     academic_session_id,
     class_id,
     term,
-    assessment_type,
   };
 
   const missingField = Object.entries(requiredFields).find(
@@ -298,7 +305,6 @@ const createTermClassCbtAssessmentTimetable = catchErrors(async (req, res) => {
     timetable: validateTimetableArray.value,
     user_id,
     userRole,
-    assessment_type,
   };
 
   const result = await termClassCbtAssessmentTimetableCreation(payload);
@@ -318,7 +324,7 @@ const createTermClassCbtAssessmentTimetable = catchErrors(async (req, res) => {
 const setSubjectCbtObjQuestionsForAClass = catchErrors(async (req, res) => {
   console.log('req.body:', req.body);
   const { academic_session_id, class_id } = req.params;
-  const { questions_array, term, subject_id, assessment_type } = req.body;
+  const { questions_array, term, subject_id } = req.body;
 
   if (!Array.isArray(questions_array) || questions_array.length === 0) {
     throw new AppError('Questions are required.', 400);
@@ -336,7 +342,6 @@ const setSubjectCbtObjQuestionsForAClass = catchErrors(async (req, res) => {
     questions_array,
     term,
     subject_id,
-    assessment_type,
   };
 
   const missingField = Object.entries(requiredFields).find(
@@ -365,7 +370,6 @@ const setSubjectCbtObjQuestionsForAClass = catchErrors(async (req, res) => {
     term,
     subject_id,
     teacher_id,
-    assessment_type,
   };
 
   const result = await objQestionSetting(payload);
@@ -387,7 +391,7 @@ const setSubjectCbtObjQuestionsForAClass = catchErrors(async (req, res) => {
 const classTeacherAuthorizeStudentsToWriteSubjectCbt = catchErrors(
   async (req, res) => {
     const { subject_id, academic_session_id, class_id } = req.params;
-    const { students_id_array, term, assessment_type } = req.body;
+    const { students_id_array, term } = req.body;
 
     if (!Array.isArray(students_id_array) || students_id_array.length === 0) {
       throw new AppError(
@@ -408,7 +412,6 @@ const classTeacherAuthorizeStudentsToWriteSubjectCbt = catchErrors(
       academic_session_id,
       class_id,
       students_id_array,
-      assessment_type,
     };
 
     const missingField = Object.entries(requiredFields).find(
@@ -429,7 +432,6 @@ const classTeacherAuthorizeStudentsToWriteSubjectCbt = catchErrors(
       class_id,
       teacher_id,
       students_id_array,
-      assessment_type,
     };
 
     const result = await studentCbtSubjectCbtAssessmentAuthorization(payload);
@@ -452,8 +454,7 @@ const classTeacherAuthorizeStudentsToWriteSubjectCbt = catchErrors(
 
 const startSubjectCbtObjCbtAssessmentForAClass = catchErrors(
   async (req, res) => {
-    const { term, subject_id, academic_session_id, class_id, assessment_type } =
-      req.params;
+    const { term, subject_id, academic_session_id, class_id } = req.params;
 
     const student_id = req.user?.userId;
 
@@ -466,7 +467,6 @@ const startSubjectCbtObjCbtAssessmentForAClass = catchErrors(
       class_id,
       term,
       subject_id,
-      assessment_type,
     };
 
     const missingField = Object.entries(requiredFields).find(
@@ -486,7 +486,6 @@ const startSubjectCbtObjCbtAssessmentForAClass = catchErrors(
       student_id,
       term,
       subject_id,
-      assessment_type,
     };
 
     const result = await subjectCbtObjCbtAssessmentStarting(payload);
@@ -711,7 +710,7 @@ const setSubjectCbtTheroyQuestionsForAClass = catchErrors(async (req, res) => {
 export {
   getCbtAssessmentDocumentById,
   getAllClassCbtAssessmentTimetables,
-  getTermClassCbtAssessmentTimetable,
+  getTermClassCbtAssessmentTimetables,
   getTermCbtAssessmentDocument,
   submitSubjectCbtObjCbtAssessmentForAClass,
   updateSubjectCbtObjCbtAssessmentAnswersForAClass,

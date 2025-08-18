@@ -2374,7 +2374,7 @@ type SubjectObjQuestionDocumentCreationType = {
   questions_array: ObjQuestionType[];
   term: string;
   subject_id: string;
-  assessment_type: string;
+  // assessment_type: string;
 };
 
 type CbtAssessmentInputFieldsType = {
@@ -2389,7 +2389,7 @@ type CbtAssessmentStartingType = {
   academic_session_id: string;
   subject_id: string;
   class_id: string;
-  assessment_type: string;
+  // assessment_type: string;
   student_id: mongoose.Types.ObjectId;
   term: string;
 };
@@ -2430,14 +2430,14 @@ type GetClassCbtAssessmentTimetablePayloadType = {
   academic_session_id: string;
   class_id: string;
   term: string;
-  assessment_type: string;
+  // assessment_type: string;
 };
 
 type ClassCbtAssessmentTimetablePayloadType = {
   // exam_id: string;
 
   userRole: string;
-  assessment_type: string;
+  // assessment_type: string;
   academic_session_id: string;
   class_id: string;
   user_id: mongoose.Types.ObjectId;
@@ -2606,7 +2606,7 @@ type CbtAssessmentAuthorizationPayloadType = {
   term: string;
   academic_session_id: string;
   class_id: string;
-  assessment_type: string;
+  // assessment_type: string;
   teacher_id: mongoose.Types.ObjectId;
   students_id_array: mongoose.Types.ObjectId[];
 };
@@ -2614,7 +2614,7 @@ type CbtAssessmentAuthorizationPayloadType = {
 type CbtAssessmentDocumentPayload = {
   academic_session_id: string;
   term: string;
-  assessment_type: string;
+  // assessment_type: string;
 };
 
 type FetchAttendanceType = {

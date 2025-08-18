@@ -1082,7 +1082,11 @@ const commonRules = {
   }),
   stringRequired: Joi.string()
     .pattern(/^[^{}<>[\]]*$/)
-    .required(),
+    .required()
+    .messages({
+      'string.empty': '{#label} is required.',
+      'any.required': '{#label} is required',
+    }),
   middle_name: Joi.string()
     .optional()
     .allow(null, '')
@@ -1375,14 +1379,16 @@ const joiValidateExamInputFields = <T extends CbtAssessmentInputFieldsType>(
   payload: T
 ): { success: boolean; value?: any; error?: string } => {
   const validationSchema = Joi.object({
-    assessment_type: commonRules.stringRequired,
+    assessment_type: commonRules.stringRequired.label('assessment_type'),
     min_obj_questions: Joi.number().required(),
     max_obj_questions: Joi.number().required(),
     expected_obj_number_of_options: Joi.number().required(),
     number_of_questions_per_student: Joi.number().required(),
   });
 
-  const { error, value } = validationSchema.validate(payload);
+  const { error, value } = validationSchema.validate(payload, {
+    errors: { wrap: { label: '' } },
+  });
 
   if (error) {
     return { success: false, error: error.details[0].message };
