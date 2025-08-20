@@ -1399,16 +1399,25 @@ const joiValidateExamInputFields = <T extends CbtAssessmentInputFieldsType>(
 const singleQuestionSchema = Joi.object({
   question_number: Joi.number().required(),
   question_text: Joi.string().trim().required(),
-  options: Joi.array()
-    .items(Joi.string().trim().required())
-    .length(4)
-    .required(),
+  options: Joi.array().items(Joi.string().trim().required()).min(2).required(),
   correct_answer: Joi.string().trim().required(),
   score: Joi.number().required(),
 })
-  .custom((value, helpers) => {
-    if (!value.options.includes(value.correct_answer)) {
+  .custom((value: ObjQuestionType, helpers) => {
+    const normalizedOptions = value.options.map((opt) =>
+      opt.trim().toLowerCase()
+    );
+    const normalizedCorrectAnswer = value.correct_answer.trim().toLowerCase();
+
+    if (!normalizedOptions.includes(normalizedCorrectAnswer)) {
       return helpers.error('any.invalidCorrectAnswer', {
+        qNum: value.question_number,
+      });
+    }
+
+    const uniqueOptions = new Set(normalizedOptions);
+    if (uniqueOptions.size !== normalizedOptions.length) {
+      return helpers.error('any.duplicateOptions', {
         qNum: value.question_number,
       });
     }
@@ -1417,6 +1426,9 @@ const singleQuestionSchema = Joi.object({
   .messages({
     'any.invalidCorrectAnswer':
       'Question {{#qNum}} has an invalid correct answer not present in options.',
+
+    'any.duplicateOptions':
+      'Question {{#qNum}} has duplicate options. Each option must be unique.',
   });
 
 const joiValidateQuestionArray = (

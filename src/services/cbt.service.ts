@@ -33,7 +33,11 @@ import Student from '../models/students.model';
 import Subject from '../models/subject.model';
 import Teacher from '../models/teachers.model';
 import { AppError } from '../utils/app.error';
-import { capitalizeFirstLetter, formatDate } from '../utils/functions';
+import {
+  capitalizeFirstLetter,
+  formatDate,
+  normalizeQuestions,
+} from '../utils/functions';
 import SuperAdmin from '../models/super_admin.model';
 import Admin from '../models/admin.model';
 import { SubjectResult } from '../models/subject_result.model';
@@ -776,7 +780,7 @@ const objQestionSetting = async (
     const uniqueQuestions = new Set();
 
     questions_array.forEach((q) => {
-      const key = q.question_text;
+      const key = q.question_text.trim().toLowerCase();
       const options = q.options;
 
       if (uniqueQuestions.has(key) && uniqueQuestions.has(options)) {
@@ -847,6 +851,8 @@ const objQestionSetting = async (
         last_cutoff_minutes * 60000
     );
 
+    const questionsToLowerCase = normalizeQuestions(questions_array);
+
     const newSubjectQuestion = new CbtQuestion({
       exam_id: examDocExist._id,
       academic_session_id: academicSessionExist._id,
@@ -855,7 +861,8 @@ const objQestionSetting = async (
       term: term,
       teacher_id: teacher_id,
       level: classExist.level,
-      obj_questions: questions_array,
+      obj_questions: questionsToLowerCase,
+      // obj_questions: questions_array,
       obj_start_time: actualSubjectExamTime?.start_time,
       obj_initial_cutoff_time: initial_cutoff_time,
       obj_final_cutoff_time: final_cutoff_time,

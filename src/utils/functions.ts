@@ -325,6 +325,7 @@ import {
   ClassPositionCalType,
   CompanyEmailQueue,
   EmailQueue,
+  ObjQuestionType,
   ResultObjType,
   ScoreAndGradingType,
   ScoreType,
@@ -665,7 +666,19 @@ const formatDate = (date = new Date()) => {
   return dateFormatted;
 };
 
+const normalizeQuestions = (
+  questions_array: ObjQuestionType[]
+): ObjQuestionType[] => {
+  return questions_array.map((q: ObjQuestionType) => ({
+    ...q,
+    question_text: q.question_text.trim().toLowerCase(),
+    options: q.options.map((opt) => opt.trim().toLowerCase()),
+    correct_answer: q.correct_answer.trim().toLowerCase(),
+  }));
+};
+
 export {
+  normalizeQuestions,
   formatDate,
   schoolCountryHandCoded,
   schoolCityHandCoded,
