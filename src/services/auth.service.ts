@@ -6,6 +6,7 @@ import {
   VerificationType,
   VerifyUserType,
   LogoutPayload,
+  GenerateBankReferenceType,
 } from '../constants/types';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
@@ -32,7 +33,12 @@ import {
 import { AppError } from '../utils/app.error';
 import { sendEmailVerification } from '../utils/nodemailer';
 import { object } from 'joi';
-import { capitalizeFirstLetter } from '../utils/functions';
+import {
+  capitalizeFirstLetter,
+  generateBankReference,
+  mySchoolDomain,
+  mySchoolName,
+} from '../utils/functions';
 import { emailQueue } from '../utils/queue';
 import {
   generateAccessToken,
@@ -43,6 +49,8 @@ import { RefreshToken } from '../models/refresh_token.model';
 import Payment from '../models/payment.model';
 import Session from '../models/session.model';
 import BlackListedToken from '../models/black_listed.model';
+import { createVirtualAccount } from '../utils/klazikschoolsCommunication/accounts';
+import StudentAccount from '../models/student_account.model';
 
 const registerNewUser = async (payload: UserDocument) => {
   try {
@@ -75,6 +83,72 @@ const registerNewUser = async (payload: UserDocument) => {
 
     if (!userEmailVerification) {
       throw new AppError('Unable to create token', 400);
+    }
+
+    if (payload.role === 'student') {
+      const input: GenerateBankReferenceType = {
+        first_name: userResult.first_name,
+        last_name: userResult.last_name,
+        student_id: userResult._id,
+      };
+
+      const ref = generateBankReference(input);
+
+      const accountName = `${userResult.first_name} ${userResult.last_name}`;
+
+      const newAccount = new StudentAccount({
+        our_ref_to_bank: ref,
+        student_id: userResult._id,
+      });
+
+      await newAccount.save();
+
+      const accountOpeningPayload = {
+        student_id: userResult._id,
+        email: userResult.email,
+        account_name: accountName,
+        first_name: userResult.first_name,
+        last_name: userResult.last_name,
+        school_name: mySchoolName,
+        domain_name: mySchoolDomain,
+        ref: ref,
+      };
+
+      const createAccount = await createVirtualAccount(accountOpeningPayload);
+      console.log('createAccount:', createAccount);
+
+      if (!createAccount) {
+        // i can do retry function here or i use queue for ubaCreateAccount function
+        throw new Error('Unable to create account');
+      }
+
+      console.log('createAccount:', createAccount);
+
+      const {
+        account_number,
+        account_name,
+        student_id,
+        customer_reference,
+        first_name,
+        last_name,
+        email,
+        ref: reference,
+      } = createAccount;
+
+      const studentAccDoc = await StudentAccount.findOne({
+        student_id: student_id,
+        our_ref_to_bank: reference,
+      });
+      if (!studentAccDoc) {
+        throw new AppError('Student does not have account saved yet', 404);
+      }
+
+      studentAccDoc.customer_reference = customer_reference;
+      studentAccDoc.account_number = account_number;
+      studentAccDoc.account_name = account_name;
+      await studentAccDoc.save();
+
+      // end
     }
 
     // const name = capitalizeFirstLetter(userResult.first_name);

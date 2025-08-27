@@ -2720,7 +2720,48 @@ type SubjectDocument = Document & {
   teacher_ids: mongoose.Types.ObjectId[];
 };
 
+type CreateVirtualAccountType = {
+  student_id: string;
+  first_name: string;
+  last_name: string;
+  account_name: string;
+  email: string;
+  ref: string;
+  school_name: string;
+  domain_name: string;
+};
+
+type GenerateBankReferenceType = {
+  student_id: mongoose.Types.ObjectId;
+  first_name: string;
+  last_name: string;
+};
+
+type AccountCreationReturnType = {
+  account_number: string;
+  account_name: string;
+  student_id: string;
+  customer_reference: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  ref: string;
+};
+
+type StudentAccountDocumentType = {
+  account_name: string;
+  customer_reference: string;
+  our_ref_to_bank: string;
+  account_number: string;
+  student_id: mongoose.Types.ObjectId;
+  account_balance: number;
+};
+
 export {
+  GenerateBankReferenceType,
+  AccountCreationReturnType,
+  StudentAccountDocumentType,
+  CreateVirtualAccountType,
   ExamScoreType,
   ResultJobData,
   CbtAssessmentJobData,

@@ -34,6 +34,7 @@ import schoolRoute from './routes/school.route';
 import addressRoute from './routes/address.route';
 import subjectRoute from './routes/subject.route';
 import teacherRoute from './routes/teacher.route';
+import klazikRoute from './routes/klazik.route';
 import { examStatusUpdatejob } from './utils/cron_jobs';
 import { registerCbtHandlers } from './sockets/cbtSocketHandlers';
 import { createServer } from 'http';
@@ -104,6 +105,7 @@ app.use('/api/v1/cbt', cbtRoute);
 app.use('/api/v1/non-teaching', nonTeachingRoute);
 app.use('/api/v1/notifications', notificationRoute);
 app.use('/api/v1/super-admin', superAdminRoute);
+app.use('/api/v1/accounts', klazikRoute);
 app.use('/api/v1/school', schoolRoute);
 
 app.use('/admin/queues', serverAdapter.getRouter());

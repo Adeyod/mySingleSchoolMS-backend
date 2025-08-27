@@ -749,11 +749,19 @@ const objQestionSetting = async (
     }
 
     const minLength = examDocExist.min_obj_questions;
+    const questionsPerstudent = examDocExist.number_of_questions_per_student;
     const maxLength = examDocExist.max_obj_questions;
 
     if (questions_array.length < minLength) {
       throw new AppError(
         `The number of questions set is less than ${minLength} which is the minimum number expected.`,
+        400
+      );
+    }
+
+    if (questions_array.length < questionsPerstudent) {
+      throw new AppError(
+        `The number of questions set is less than ${questionsPerstudent} which is the expected number of questions per student.`,
         400
       );
     }

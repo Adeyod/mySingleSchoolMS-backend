@@ -325,6 +325,7 @@ import {
   ClassPositionCalType,
   CompanyEmailQueue,
   EmailQueue,
+  GenerateBankReferenceType,
   ObjQuestionType,
   ResultObjType,
   ScoreAndGradingType,
@@ -332,6 +333,7 @@ import {
   UserDocument,
 } from '../constants/types';
 import { AppError } from './app.error';
+import HashUtil from './crypto/sha256';
 import { emailQueue } from './queue';
 
 const capitalizeFirstLetter = (payload: string) => {
@@ -637,7 +639,7 @@ const extractSubdomain = (host: string): string | null => {
 };
 
 const schoolSubscriptionPlan = subscriptionEnum[1];
-const schoolNameHandCoded = 'Model College';
+const schoolNameHandCoded = 'Born to Win';
 const schoolCityHandCoded = 'Ado-Ekiti';
 const schoolStateHandCoded = 'Ekiti State';
 const schoolCountryHandCoded = 'Nigeria';
@@ -677,7 +679,38 @@ const normalizeQuestions = (
   }));
 };
 
+const mySchoolName = 'Born to Win';
+const mySchoolDomain = 'https://winners-college.vercel.app';
+
+const generateBankReference = (payload: GenerateBankReferenceType): string => {
+  const { student_id, first_name, last_name } = payload;
+
+  console.log('payload:', payload);
+
+  if (!student_id || !first_name || !last_name) {
+    throw new Error(
+      'Please provide student ID, first name and last name to generate reference number.'
+    );
+  }
+
+  const namePart = `${first_name}${last_name}`.toUpperCase();
+  const hashPart = HashUtil.hash(student_id.toString());
+
+  // const hashPart = crypto
+  //   .createHash('sha1')
+  //   .update(student_id.toString())
+  //   .digest('hex')
+  const timePart = Date.now().toString().slice(-6);
+
+  const ref = `${namePart}${hashPart}${timePart}`;
+
+  return ref;
+};
+
 export {
+  generateBankReference,
+  mySchoolName,
+  mySchoolDomain,
   normalizeQuestions,
   formatDate,
   schoolCountryHandCoded,
