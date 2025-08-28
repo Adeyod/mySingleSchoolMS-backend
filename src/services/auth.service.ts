@@ -51,6 +51,7 @@ import Session from '../models/session.model';
 import BlackListedToken from '../models/black_listed.model';
 import { createVirtualAccount } from '../utils/klazikschoolsCommunication/accounts';
 import StudentAccount from '../models/student_account.model';
+import mongoose from 'mongoose';
 
 const registerNewUser = async (payload: UserDocument) => {
   try {
@@ -115,7 +116,6 @@ const registerNewUser = async (payload: UserDocument) => {
       };
 
       const createAccount = await createVirtualAccount(accountOpeningPayload);
-      console.log('createAccount:', createAccount);
 
       if (!createAccount) {
         // i can do retry function here or i use queue for ubaCreateAccount function
@@ -136,9 +136,11 @@ const registerNewUser = async (payload: UserDocument) => {
       } = createAccount;
 
       const studentAccDoc = await StudentAccount.findOne({
-        student_id: student_id,
+        student_id: new mongoose.Types.ObjectId(student_id),
         our_ref_to_bank: reference,
       });
+
+      console.log('studentAccDoc:', studentAccDoc);
       if (!studentAccDoc) {
         throw new AppError('Student does not have account saved yet', 404);
       }
@@ -151,20 +153,20 @@ const registerNewUser = async (payload: UserDocument) => {
       // end
     }
 
-    // const name = capitalizeFirstLetter(userResult.first_name);
+    const name = capitalizeFirstLetter(userResult.first_name);
 
-    // const jobData = {
-    //   email: userResult.email,
-    //   first_name: name,
-    //   token: userEmailVerification.token,
-    //   type: 'email-verification',
-    // };
+    const jobData = {
+      email: userResult.email,
+      first_name: name,
+      token: userEmailVerification.token,
+      type: 'email-verification',
+    };
 
-    // const mailSent = await emailQueue.add('sendEmail', jobData, {
-    //   attempts: 3,
-    //   backoff: 10000,
-    //   removeOnComplete: true,
-    // });
+    const mailSent = await emailQueue.add('sendEmail', jobData, {
+      attempts: 3,
+      backoff: 10000,
+      removeOnComplete: true,
+    });
 
     return userResult;
   } catch (error) {
@@ -240,6 +242,7 @@ const userLogin = async (
     }
 
     // let userPaymentDoc = null;
+    let studentAccount = null;
 
     if (userExist.role === 'parent') {
       await userExist.populate('children', '-password');
@@ -247,6 +250,10 @@ const userLogin = async (
       await userExist.populate('parent_id current_class.class_id', '-password');
       const session = await Session.findOne({
         is_active: true,
+      });
+
+      studentAccount = await StudentAccount.findOne({
+        student_id: userExist._id,
       });
 
       // const activeTerm = session?.terms.find((term) => term.is_active === true);
@@ -354,7 +361,7 @@ const userLogin = async (
     const tokenObj = {
       accessToken,
       refreshToken,
-      user: { ...others },
+      user: { ...others, studentAccountDetails: studentAccount },
       // user: { ...others, latest_payment_document: userPaymentDoc },
     };
 

@@ -2757,7 +2757,13 @@ type StudentAccountDocumentType = {
   account_balance: number;
 };
 
+type StudentUpdateDetailsReturnType = {
+  student: UserWithoutPassword;
+  studentAccountDetails: StudentAccountDocumentType;
+};
+
 export {
+  StudentUpdateDetailsReturnType,
   GenerateBankReferenceType,
   AccountCreationReturnType,
   StudentAccountDocumentType,

@@ -210,10 +210,7 @@ const createNewUserDoc = async (payload: UserDocument) => {
       ...roleSpecificFields[payload.role],
     });
 
-    console.log('users:', newUser);
-
-    return await newUser;
-    // .save();
+    return await newUser.save();
   } catch (error) {
     if (error instanceof Error) {
       throw new Error(`Error creating new user document: ${error.message}`);

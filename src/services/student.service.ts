@@ -711,9 +711,11 @@ import mongoose, { ObjectId } from 'mongoose';
 import {
   ParentObjType,
   SessionSubscriptionType,
+  StudentAccountDocumentType,
   StudentLinkingType,
   StudentNotificationType,
   StudentSessionSubscriptionType,
+  StudentUpdateDetailsReturnType,
   StudentUpdateType,
   StudentWithPaymentType,
   UserDocument,
@@ -739,6 +741,7 @@ import {
 import { emailQueue } from '../utils/queue';
 import Class from '../models/class.model';
 import { schoolBusValidation } from '../utils/validation';
+import StudentAccount from '../models/student_account.model';
 
 const fetchStudentById = async (
   student_id: string
@@ -780,9 +783,14 @@ const fetchStudentById = async (
 
     const { password, ...others } = response.toJSON();
 
+    const studentAccount = await StudentAccount.findOne({
+      student_id: others._id,
+    });
+
     const userObj = {
       ...others,
       latest_payment_document: userPaymentDoc,
+      studentAccountDetails: studentAccount,
     };
 
     await session.commitTransaction();
@@ -808,7 +816,7 @@ const studentUpdateDetails = async (
   req: Request,
   payload: StudentUpdateType,
   res: any
-): Promise<UserWithoutPassword> => {
+): Promise<StudentUpdateDetailsReturnType> => {
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
@@ -881,10 +889,19 @@ const studentUpdateDetails = async (
 
     const { password, ...others } = updateStudent.toJSON();
 
+    const studentAccount = await StudentAccount.findOne({
+      student_id: others._id,
+    }).session(session);
+
     await session.commitTransaction();
     session.endSession();
 
-    return others as UserWithoutPassword;
+    const studentObj: StudentUpdateDetailsReturnType = {
+      student: others as UserWithoutPassword,
+      studentAccountDetails: studentAccount as StudentAccountDocumentType,
+    };
+
+    return studentObj;
   } catch (error) {
     await session.abortTransaction();
     session.endSession();

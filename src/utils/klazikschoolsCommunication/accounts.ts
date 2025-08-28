@@ -53,20 +53,9 @@ const createVirtualAccount = async (
 
   try {
     const response = await axios.post(
-      // 'klazikschoolsbackend.com/create-virtual-account',
       `${klazikUrl}/api/v1/tp-school/accounts/open-student-account`,
       {
         timestamp,
-        // data: {
-        //   studentId: payload.student_id,
-        //   firstName: payload.first_name,
-        //   lastName: payload.last_name,
-        //   accountName: payload.account_name,
-        //   studentEmail: payload.email,
-        //   ref_from_third_party: payload.ref,
-        //   schoolName: payload.school_name,
-        //   domainName: payload.domain_name,
-        // },
         ...payloadObj,
       },
 
@@ -80,8 +69,8 @@ const createVirtualAccount = async (
       }
     );
 
-    console.log('Response from klazik schools:', response.data);
-    return response.data;
+    // console.log('Response from klazik schools:', response.data);
+    return response.data.school;
   } catch (error: any) {
     console.error(
       'Create virtual account failed:',
