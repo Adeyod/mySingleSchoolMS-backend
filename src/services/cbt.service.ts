@@ -1288,14 +1288,15 @@ const subjectCbtObjCbtAssessmentStarting = async (
       );
     }
 
-    if (current_time > end_time) {
-      throw new AppError(
-        `This exam has ended because the time for the exam has passed. Exam End time: ${formatDate(
-          exam.obj_final_cutoff_time
-        )}`,
-        401
-      );
-    }
+    // I WILL UNCOMMENT LATER
+    // if (current_time > end_time) {
+    //   throw new AppError(
+    //     `This exam has ended because the time for the exam has passed. Exam End time: ${formatDate(
+    //       exam.obj_final_cutoff_time
+    //     )}`,
+    //     401
+    //   );
+    // }
 
     let result = await CbtResult.findOne({
       exam_id: examDocExist._id,
@@ -1987,6 +1988,9 @@ const subjectCbtObjCbtAssessmentSubmission = async (
       throw new AppError('Student not found.', 404);
     }
 
+    console.log('student Email:', studentExist.email);
+    console.log('student Email:', studentExist._id);
+
     const examDocExist = await CbtExam.findById({
       _id: examId,
     }).session(session);
@@ -2007,6 +2011,7 @@ const subjectCbtObjCbtAssessmentSubmission = async (
 
     const notStarted = result.obj_status === examStatusEnum[0];
     const isSubmitted = result.obj_status === examStatusEnum[2];
+    // I WILL UNCOMMENT LATER
     // if (notStarted || isSubmitted) {
     //   console.log('result.obj_status:', result.obj_status);
     //   throw new AppError(
@@ -2029,6 +2034,7 @@ const subjectCbtObjCbtAssessmentSubmission = async (
       );
     }
 
+    // I WILL UNCOMMENT LATER
     // if (current_time > finalSubmission) {
     //   throw new AppError(`Exam is over.`, 401);
     // }
