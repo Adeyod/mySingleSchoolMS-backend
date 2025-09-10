@@ -2007,14 +2007,14 @@ const subjectCbtObjCbtAssessmentSubmission = async (
 
     const notStarted = result.obj_status === examStatusEnum[0];
     const isSubmitted = result.obj_status === examStatusEnum[2];
-    if (notStarted || isSubmitted) {
-      console.log('result.obj_status:', result.obj_status);
-      throw new AppError(
-        'This subject exam is not in-progress. It is either completed or ended.',
-        400
-      );
-    }
-    console.log('I am being called 1...');
+    // if (notStarted || isSubmitted) {
+    //   console.log('result.obj_status:', result.obj_status);
+    //   throw new AppError(
+    //     'This subject exam is not in-progress. It is either completed or ended.',
+    //     400
+    //   );
+    // }
+    console.log('I am being called 2...');
 
     const current_time = Date.now();
     const start_time = new Date(result.obj_start_time).getTime();
@@ -2029,11 +2029,11 @@ const subjectCbtObjCbtAssessmentSubmission = async (
       );
     }
 
-    if (current_time > finalSubmission) {
-      throw new AppError(`Exam is over.`, 401);
-    }
+    // if (current_time > finalSubmission) {
+    //   throw new AppError(`Exam is over.`, 401);
+    // }
 
-    console.log('I am being called 1...');
+    console.log('I am being called 3...');
 
     // START CHECKING TRIGGER TYPE HERE
     if (trigger_type === triggerTypeEnum[0]) {
@@ -2055,7 +2055,7 @@ const subjectCbtObjCbtAssessmentSubmission = async (
       result.obj_status = examStatusEnum[3];
     }
 
-    console.log('I am being called 1...');
+    console.log('I am being called 4...');
 
     const questionMap = new Map(
       result.shuffled_obj_questions.map((q) => [q._id.toString(), q])
@@ -2084,7 +2084,7 @@ const subjectCbtObjCbtAssessmentSubmission = async (
       0
     );
 
-    console.log('I am being called 1...');
+    console.log('I am being called 5...');
 
     const resultSettings = await ResultSetting.findOne({
       level: result.level,
@@ -2095,7 +2095,7 @@ const subjectCbtObjCbtAssessmentSubmission = async (
     }
 
     const exam_component_name = resultSettings?.exam_components.exam_name;
-    console.log('I am being called 1...');
+    console.log('I am being called 6...');
 
     let objKeyName;
     let testName: string;
@@ -2128,7 +2128,7 @@ const subjectCbtObjCbtAssessmentSubmission = async (
     }
 
     const rawPercentage = (totalStudentScore / totalPossibleScore) * 100;
-    console.log('I am being called 1...');
+    console.log('I am being called 7...');
 
     const maxObjectivePercent = objKeyName?.percentage; // we get this from the result settings of the school
     const convertedScore = totalPossibleScore
@@ -2142,7 +2142,7 @@ const subjectCbtObjCbtAssessmentSubmission = async (
 
     result.markModified('shuffled_obj_questions');
     await result.save({ session });
-    console.log('I am being called 1...');
+    console.log('I am being called 8...');
 
     await session.commitTransaction();
     session.endSession();
@@ -2173,7 +2173,7 @@ const subjectCbtObjCbtAssessmentSubmission = async (
     };
 
     studentResultQueue.add(name, data, opts);
-    console.log('I am being called 1...');
+    console.log('I am being called 9...');
 
     return result;
   } catch (error) {
