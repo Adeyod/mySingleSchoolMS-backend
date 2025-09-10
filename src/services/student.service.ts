@@ -896,12 +896,14 @@ const studentUpdateDetails = async (
     await session.commitTransaction();
     session.endSession();
 
-    const studentObj: StudentUpdateDetailsReturnType = {
-      student: others as UserWithoutPassword,
-      studentAccountDetails: studentAccount as StudentAccountDocumentType,
+    const student = {
+      ...others,
+      studentAccountDetails: studentAccount,
     };
 
-    return studentObj;
+    return student as UserWithoutPassword & {
+      studentAccountDetails: StudentAccountDocumentType;
+    };
   } catch (error) {
     await session.abortTransaction();
     session.endSession();

@@ -454,6 +454,8 @@ const classTeacherAuthorizeStudentsToWriteSubjectCbt = catchErrors(
 
 const startSubjectCbtObjCbtAssessmentForAClass = catchErrors(
   async (req, res) => {
+    console.log('Student want to start CBT...');
+    console.log(req.params);
     const { term, subject_id, academic_session_id, class_id } = req.params;
 
     const student_id = req.user?.userId;
@@ -662,17 +664,22 @@ const submitSubjectCbtObjCbtAssessmentForAClass = catchErrors(
       },
     };
 
-    const result = await studentResultQueue.add(name, data, opts);
+    const respos = await subjectCbtObjCbtAssessmentSubmission(payload);
 
-    if (!result) {
+    if (!respos) {
       throw new AppError('Unable to end and update Cbt assessment.', 400);
     }
+    // const result = await studentResultQueue.add(name, data, opts);
+
+    // if (!result) {
+    //   throw new AppError('Unable to end and update Cbt assessment.', 400);
+    // }
 
     return res.status(200).json({
       message: `Cbt assessment submitted successfully.`,
       status: 200,
       success: true,
-      questions: result,
+      questions: respos,
     });
   }
 );

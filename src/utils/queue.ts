@@ -15,10 +15,12 @@ import {
   SubjectCumScoreJobData,
   SubjectPositionJobData,
   CbtAssessmentEndedType,
+  CbtAssessmentResultType,
 } from '../constants/types';
 import { ExpressAdapter } from '@bull-board/express';
 import { createBullBoard } from '@bull-board/api';
 import {
+  processCbtAssessmentResultSubmission,
   processCbtAssessmentSubmission,
   processStudentExamResultUpdate,
   processStudentResultUpdate,
@@ -128,6 +130,7 @@ const resultWorker = new Worker<
   | SubjectPositionJobData
   | SubjectCumScoreJobData
   | CbtAssessmentEndedType
+  | CbtAssessmentResultType
 >(
   'studentResultQueue',
   async (job) => {
@@ -150,6 +153,11 @@ const resultWorker = new Worker<
       case 'cbt-assessment-submission':
         await processCbtAssessmentSubmission(
           job.data as CbtAssessmentEndedType
+        );
+        break;
+      case 'cbt-result-submission':
+        await processCbtAssessmentResultSubmission(
+          job.data as CbtAssessmentResultType
         );
         break;
 
@@ -193,6 +201,7 @@ resultWorker.on(
           | SubjectPositionJobData
           | SubjectCumScoreJobData
           | CbtAssessmentEndedType
+          | CbtAssessmentResultType
         >
       | undefined,
     err: Error

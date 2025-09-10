@@ -41,6 +41,7 @@ import {
 import SuperAdmin from '../models/super_admin.model';
 import Admin from '../models/admin.model';
 import { SubjectResult } from '../models/subject_result.model';
+import { studentResultQueue } from '../utils/queue';
 
 const termCbtAssessmentDocumentCreation = async (
   payload: CbtAssessmentDocumentCreationType
@@ -2002,14 +2003,12 @@ const subjectCbtObjCbtAssessmentSubmission = async (
       throw new AppError(`Result does not exist.`, 404);
     }
 
-    console.log('result.obj_status:', result.obj_status);
-
     const notStarted = result.obj_status === examStatusEnum[0];
     const isSubmitted = result.obj_status === examStatusEnum[2];
     if (notStarted || isSubmitted) {
       console.log('result.obj_status:', result.obj_status);
       throw new AppError(
-        'This subject exam is not in-progress. It is either completed or ended. Here',
+        'This subject exam is not in-progress. It is either completed or ended.',
         400
       );
     }
@@ -2093,7 +2092,8 @@ const subjectCbtObjCbtAssessmentSubmission = async (
     if (examDocExist.assessment_type !== exam_component_name) {
       // do for test
       objKeyName = resultSettings.components?.find(
-        (k) => k.name === examDocExist.assessment_type
+        (k) =>
+          k.name.toLowerCase() === examDocExist.assessment_type.toLowerCase()
       );
 
       if (!objKeyName?.percentage || !objKeyName?.name) {
@@ -2130,219 +2130,45 @@ const subjectCbtObjCbtAssessmentSubmission = async (
     result.obj_trigger_type = trigger_type;
 
     result.markModified('shuffled_obj_questions');
-
-    const studentSubjectResult = await SubjectResult.findOne({
-      enrolment: result.enrolment,
-      student: studentExist._id,
-      class: result.class_id,
-      session: result.academic_session_id,
-      subject: result.subject_id,
-    }).session(session);
-
-    const termResult = studentSubjectResult?.term_results.find(
-      (a) => a.term === result.term
-    );
-
-    let subjectObj;
-    let examObj: ExamScoreType | null = null;
-    let testObj: ScoreType | null = null;
-
-    if (examDocExist.assessment_type !== exam_component_name) {
-      // do for test
-
-      const alreadyHasExam = termResult?.scores.find(
-        (score) => score.score_name.toLowerCase() === testName?.toLowerCase()
-      );
-
-      if (alreadyHasExam) {
-        console.log('Student already has exam result recorded.');
-      }
-
-      testObj = {
-        score_name: objKeyName?.name,
-        score: convertedScore,
-      };
-
-      subjectObj = {
-        subject: result.subject_id,
-        subject_teacher: result.subject_teacher,
-        total_score: 0,
-        cumulative_average: 0,
-        last_term_cumulative: 0,
-        scores: [testObj],
-        exam_object: [],
-        subject_position: '',
-      };
-
-      const hasRecordedExamScore = termResult?.scores.find(
-        (s) => s.score_name.toLowerCase() === testObj?.score_name.toLowerCase()
-      );
-
-      if (hasRecordedExamScore) {
-        console.log(
-          `Score for ${testObj.score_name} has been recorded for this student.`
-        );
-      }
-      termResult?.scores.push(testObj);
-    } else {
-      // do for exam
-      const alreadyHasExam = termResult?.scores.find(
-        (score) =>
-          score.score_name.toLowerCase() === exam_component_name?.toLowerCase()
-      );
-
-      if (alreadyHasExam) {
-        console.log('Student already has exam result recorded.');
-      }
-      const exam_components = resultSettings?.exam_components.component;
-
-      objKeyName = exam_components?.find((k) => k.key === examKeyEnum[0]);
-
-      if (!objKeyName?.percentage || !objKeyName?.name) {
-        throw new AppError(
-          'Objective scoring setup not found in result settings.',
-          400
-        );
-      }
-
-      examObj = {
-        key: objKeyName.key,
-        score_name: objKeyName?.name,
-        score: convertedScore,
-      };
-
-      subjectObj = {
-        subject: result.subject_id,
-        subject_teacher: result.subject_teacher,
-        total_score: 0,
-        cumulative_average: 0,
-        last_term_cumulative: 0,
-        scores: [examObj],
-        exam_object: [examObj],
-        subject_position: '',
-      };
-
-      const hasRecordedExamScore = termResult?.exam_object.find(
-        (s) => s.score_name.toLowerCase() === examObj?.score_name.toLowerCase()
-      );
-      if (hasRecordedExamScore) {
-        console.log(
-          `Score for ${examObj.score_name} has been recorded for this student.`
-        );
-      }
-      termResult?.scores.push(examObj);
-      termResult?.exam_object.push(examObj);
-    }
-
-    studentSubjectResult?.markModified('term_results');
-
-    const mainResult = await Result.findOne({
-      student: studentExist._id,
-      enrolment: result.enrolment,
-      class: result.class_id,
-      academic_session_id: result.academic_session_id,
-    }).session(session);
-
-    let termExistInResultDoc = mainResult?.term_results.find(
-      (t) => t.term === result.term
-    );
-
-    if (!termExistInResultDoc) {
-      termExistInResultDoc = {
-        term: result.term,
-        cumulative_score: 0,
-        subject_results: [subjectObj],
-        class_position: '',
-      };
-
-      mainResult?.term_results.push(termExistInResultDoc);
-      mainResult?.markModified('term_results');
-    } else {
-      const mainSubjectResult = termExistInResultDoc?.subject_results.find(
-        (s) => s.subject.toString() === result.subject_id.toString()
-      );
-
-      if (!mainSubjectResult) {
-        termExistInResultDoc?.subject_results?.push(subjectObj);
-        mainResult?.markModified('term_results');
-      }
-
-      if (examDocExist.assessment_type !== exam_component_name) {
-        if (testObj) {
-          mainSubjectResult?.scores.push(testObj);
-        }
-      } else {
-        if (examObj) {
-          mainSubjectResult?.exam_object.push(examObj);
-          mainSubjectResult?.scores.push(examObj);
-        }
-      }
-      mainResult?.markModified('term_results');
-    }
-
     await result.save({ session });
-
-    if (studentSubjectResult) {
-      await studentSubjectResult.save({ session });
-    }
-
-    if (mainResult) {
-      await mainResult.save({ session });
-    }
-
-    const actualExamTimeTable = await ClassExamTimetable.findOne({
-      academic_session_id: result.academic_session_id,
-      class_id: result.class_id,
-      term: result.term,
-      exam_id: result.exam_id,
-    }).session(session);
-
-    if (!actualExamTimeTable) {
-      throw new AppError(
-        `There is no timetable for this class in this ${result.term}.`,
-        400
-      );
-    }
-
-    const findSubjectTimetable = actualExamTimeTable.scheduled_subjects.find(
-      (s) => s.subject_id.toString() === result.subject_id.toString()
-    );
-
-    if (!findSubjectTimetable) {
-      throw new AppError(
-        `The time to write this subject exam is not taken care off in the timetable.`,
-        400
-      );
-    }
-
-    await ClassExamTimetable.updateOne(
-      {
-        academic_session_id: result.academic_session_id,
-        class_id: result.class_id,
-        term: result.term,
-        exam_id: result.exam_id,
-        'scheduled_subjects.subject_id': result.subject_id,
-      },
-      {
-        $pull: {
-          'scheduled_subjects.$.students_that_have_started': result.student_id,
-        },
-        $addToSet: {
-          'scheduled_subjects.$.students_that_have_submitted':
-            result.student_id,
-        },
-      },
-      { session }
-    );
 
     await session.commitTransaction();
     session.endSession();
+
+    const queuePayload = {
+      cbt_result_id: result._id,
+      student_id: result.student_id,
+      exam_id: result.exam_id,
+      convertedScore: result.percent_score,
+      term: result.term,
+      level: result.level,
+      enrolment: result.enrolment,
+      class_id: result.class_id,
+      subject_teacher: result.subject_teacher,
+      subject_id: result.subject_id,
+      session: result.academic_session_id,
+    };
+
+    const name = 'cbt-result-submission';
+    const data = queuePayload;
+    const opts = {
+      attempts: 5,
+      removeOnComplete: true,
+      backoff: {
+        type: 'exponential',
+        delay: 3000,
+      },
+    };
+
+    studentResultQueue.add(name, data, opts);
+
     return result;
   } catch (error) {
     await session.abortTransaction();
     session.endSession();
     if (error instanceof AppError) {
       throw new AppError(`${error.message}`, 400);
+      // throw error;
     } else {
       console.error(error);
       throw new Error('Something went wrong');

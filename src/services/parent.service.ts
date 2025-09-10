@@ -7,6 +7,7 @@ import {
 import Parent from '../models/parents.model';
 import Payment from '../models/payment.model';
 import Session from '../models/session.model';
+import StudentAccount from '../models/student_account.model';
 import Student from '../models/students.model';
 import { AppError } from '../utils/app.error';
 import mongoose from 'mongoose';
@@ -48,17 +49,23 @@ const getStudentDetails = async (
       (term) => term.is_active === true
     );
 
-    const payment = (await Payment.findOne({
-      student: getStudent._id,
-      session: activeSession?._id,
-      term: activeTerm?.name,
-    }).lean()) as PaymentDocument | null;
+    const [payment, studentAccountDetails] = await Promise.all([
+      Payment.findOne({
+        student: getStudent._id,
+        session: activeSession?._id,
+        term: activeTerm?.name,
+      }).lean<PaymentDocument | null>(),
+      StudentAccount.findOne({
+        student_id: getStudent._id,
+      }),
+    ]);
 
     const { password, ...others } = getStudent.toJSON();
 
     return {
       ...others,
       latest_payment_document: payment || null,
+      studentAccountDetails: studentAccountDetails,
     };
   } catch (error) {
     if (error instanceof Error) {
@@ -104,11 +111,16 @@ const getManyStudentDetails = async (
           term: activeTerm?.name,
         }).lean();
 
+        const studentAccountDetails = await StudentAccount.findOne({
+          student_id: p._id,
+        });
+
         const { password, ...others } = p.toJSON();
 
         const student = {
           ...others,
           latest_payment_document: payment || null,
+          studentAccountDetails,
         } as StudentWithPaymentType;
 
         return student;

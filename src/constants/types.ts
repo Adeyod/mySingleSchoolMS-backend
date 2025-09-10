@@ -1701,6 +1701,7 @@ type PaymentDocument = {
 
 type StudentWithPaymentType = UserWithoutPassword & {
   latest_payment_document: PaymentDocument | null;
+  studentAccountDetails: StudentAccountDocumentType | null;
 };
 
 type StudentLinkingType = {
@@ -2426,6 +2427,20 @@ type CbtAssessmentEndedType = CbtAssessmentUpdateCommonType & {
   result_doc: ResultDocType;
 };
 
+type CbtAssessmentResultType = {
+  cbt_result_id: mongoose.Types.ObjectId;
+  student_id: mongoose.Types.ObjectId;
+  exam_id: mongoose.Types.ObjectId;
+  term: string;
+  level: string;
+  enrolment: mongoose.Types.ObjectId;
+  class_id: mongoose.Types.ObjectId;
+  subject_teacher: mongoose.Types.ObjectId;
+  subject_id: mongoose.Types.ObjectId;
+  session: mongoose.Types.ObjectId;
+  convertedScore: number;
+};
+
 type GetClassCbtAssessmentTimetablePayloadType = {
   academic_session_id: string;
   class_id: string;
@@ -2757,8 +2772,7 @@ type StudentAccountDocumentType = {
   account_balance: number;
 };
 
-type StudentUpdateDetailsReturnType = {
-  student: UserWithoutPassword;
+type StudentUpdateDetailsReturnType = UserWithoutPassword & {
   studentAccountDetails: StudentAccountDocumentType;
 };
 
@@ -2797,6 +2811,7 @@ export {
   CbtAssessmentDocumentCreationType,
   AccessModeType,
   FeatureKeyType,
+  CbtAssessmentResultType,
   ContactUsType,
   ContactUsDocument,
   ClassTeacherManagesPayloadType,

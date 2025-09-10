@@ -14,6 +14,9 @@ import {
   SubjectResultDocument,
   SubjectTermResult,
   CbtAssessmentEndedType,
+  ExamScoreType,
+  ScoreType,
+  CbtAssessmentResultType,
 } from '../constants/types';
 import Class from '../models/class.model';
 import ClassEnrolment from '../models/classes_enrolment.model';
@@ -25,6 +28,10 @@ import { AppError } from '../utils/app.error';
 import { calculateSubjectSumAndGrade } from '../utils/functions';
 import { SubjectResult } from '../models/subject_result.model';
 import { subjectCbtObjCbtAssessmentSubmission } from '../services/cbt.service';
+import ClassExamTimetable from '../models/class_exam_timetable.model';
+import CbtResult from '../models/cbt_result.model';
+import CbtExam from '../models/cbt_exam.model';
+import { examKeyEnum } from '../constants/enum';
 
 const createResult = async (payload: ResultCreationType) => {
   try {
@@ -907,7 +914,303 @@ const processCbtAssessmentSubmission = async (
   }
 };
 
+const processCbtAssessmentResultSubmission = async (
+  payload: CbtAssessmentResultType
+) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+  try {
+    const examDocExist = await CbtExam.findById(payload.exam_id).session(
+      session
+    );
+
+    if (!examDocExist) {
+      throw new AppError('Exam document not found.', 400);
+    }
+
+    const resultSettings = await ResultSetting.findOne({
+      level: payload.level,
+    }).session(session);
+
+    if (!resultSettings) {
+      throw new AppError(`There is no result settings for this class.`, 404);
+    }
+
+    const exam_component_name = resultSettings?.exam_components.exam_name;
+
+    // first fetch the cbtResult
+    let studentSubjectResult = await SubjectResult.findOne({
+      enrolment: payload.enrolment,
+      student: payload.student_id,
+      class: payload.class_id,
+      session: payload.session,
+      subject: payload.subject_id,
+    }).session(session);
+
+    if (!studentSubjectResult) {
+      studentSubjectResult = new SubjectResult({
+        enrolment: payload.enrolment,
+        student: payload.student_id,
+        class: payload.class_id,
+        session: payload.session,
+        subject: payload.subject_id,
+        subject_teacher: payload.subject_teacher,
+        term_results: [],
+      });
+    }
+
+    let termResult = studentSubjectResult?.term_results.find(
+      (a) => a.term === payload.term
+    );
+
+    if (!termResult) {
+      const termEntry = {
+        term: payload.term,
+        scores: [],
+        exam_object: [],
+        total_score: 0,
+        cumulative_average: 0,
+        last_term_cumulative: 0,
+        subject_position: '',
+        class_position: '',
+      };
+      studentSubjectResult.term_results.push(termEntry);
+
+      termResult =
+        studentSubjectResult.term_results[
+          studentSubjectResult.term_results.length - 1
+        ];
+    }
+
+    let objKeyName;
+
+    let subjectObj;
+    let examObj: ExamScoreType | null = null;
+    let testObj: ScoreType | null = null;
+
+    if (examDocExist.assessment_type !== exam_component_name) {
+      // do for test
+      objKeyName = resultSettings.components?.find(
+        (k) =>
+          k.name.toLowerCase() === examDocExist.assessment_type.toLowerCase()
+      );
+
+      if (!objKeyName?.percentage || !objKeyName?.name) {
+        throw new AppError(
+          'Objective scoring setup not found in result settings.',
+          400
+        );
+      }
+
+      console.log('Iam doing for test...');
+
+      testObj = {
+        score_name: objKeyName?.name,
+        score: payload.convertedScore,
+      };
+
+      subjectObj = {
+        subject: payload.subject_id,
+        subject_teacher: payload.subject_teacher,
+        total_score: 0,
+        cumulative_average: 0,
+        last_term_cumulative: 0,
+        scores: [testObj],
+        exam_object: [],
+        subject_position: '',
+      };
+
+      const hasRecordedExamScore = termResult?.scores.find(
+        (s) => s.score_name.toLowerCase() === testObj?.score_name.toLowerCase()
+      );
+
+      console.log('hasRecordedExamScore:', hasRecordedExamScore);
+
+      if (hasRecordedExamScore) {
+        console.log(
+          `Score for ${testObj.score_name} has been recorded for this student.`
+        );
+      } else {
+        termResult?.scores.push(testObj);
+        console.log('termResult:', termResult);
+      }
+    } else {
+      // do for exam
+      console.log('Iam doing for exam...');
+
+      const exam_components = resultSettings?.exam_components.component;
+
+      objKeyName = exam_components?.find((k) => k.key === examKeyEnum[0]);
+
+      if (!objKeyName?.percentage || !objKeyName?.name) {
+        throw new AppError(
+          'Objective scoring setup not found in result settings.',
+          400
+        );
+      }
+
+      examObj = {
+        key: objKeyName.key,
+        score_name: objKeyName?.name,
+        score: payload.convertedScore,
+      };
+
+      subjectObj = {
+        subject: payload.subject_id,
+        subject_teacher: payload.subject_teacher,
+        total_score: 0,
+        cumulative_average: 0,
+        last_term_cumulative: 0,
+        scores: [examObj],
+        exam_object: [examObj],
+        subject_position: '',
+      };
+
+      const hasRecordedExamScore = termResult?.exam_object.find(
+        (s) => s.score_name.toLowerCase() === examObj?.score_name.toLowerCase()
+      );
+      if (hasRecordedExamScore) {
+        console.log(
+          `Score for ${examObj.score_name} has been recorded for this student.`
+        );
+      } else {
+        termResult?.scores.push(examObj);
+        termResult?.exam_object.push(examObj);
+      }
+    }
+
+    studentSubjectResult?.markModified('term_results');
+
+    let mainResult = await Result.findOne({
+      student: payload.student_id,
+      enrolment: payload.enrolment,
+      class: payload.class_id,
+      academic_session_id: payload.session,
+    }).session(session);
+
+    if (!mainResult) {
+      mainResult = new Result({
+        student: payload.student_id,
+        enrolment: payload.enrolment,
+        class: payload.class_id,
+        academic_session_id: payload.session,
+        term_results: [],
+      });
+    }
+
+    let termExistInResultDoc = mainResult?.term_results.find(
+      (t) => t.term === payload.term
+    );
+
+    if (!termExistInResultDoc) {
+      termExistInResultDoc = {
+        term: payload.term,
+        cumulative_score: 0,
+        subject_results: [subjectObj],
+        class_position: '',
+      };
+
+      mainResult?.term_results.push(termExistInResultDoc);
+      // mainResult?.markModified('term_results');
+    } else {
+      let mainSubjectResult = termExistInResultDoc?.subject_results.find(
+        (s) => s.subject.toString() === payload.subject_id.toString()
+      );
+
+      if (!mainSubjectResult) {
+        termExistInResultDoc?.subject_results?.push(subjectObj);
+        // mainResult?.markModified('term_results');
+      } else {
+        if (examDocExist.assessment_type !== exam_component_name) {
+          if (testObj) {
+            const hasTest = mainSubjectResult.scores.find(
+              (s) =>
+                s.score_name.toLowerCase() === testObj.score_name.toLowerCase()
+            );
+            if (!hasTest) {
+              mainSubjectResult.scores.push(testObj);
+            }
+          }
+        } else {
+          if (examObj) {
+            const hasExam = mainSubjectResult.exam_object.find(
+              (s) =>
+                s.score_name.toLowerCase() === examObj.score_name.toLowerCase()
+            );
+            if (!hasExam) {
+              mainSubjectResult.exam_object.push(examObj);
+              mainSubjectResult.scores.push(examObj);
+            }
+          }
+        }
+
+        mainResult?.markModified('term_results');
+      }
+    }
+
+    if (studentSubjectResult) {
+      await studentSubjectResult.save({ session });
+    }
+
+    if (mainResult) {
+      await mainResult.save({ session });
+    }
+
+    const actualExamTimeTable = await ClassExamTimetable.findOne({
+      academic_session_id: payload.session,
+      class_id: payload.class_id,
+      term: payload.term,
+      exam_id: payload.exam_id,
+    }).session(session);
+
+    if (!actualExamTimeTable) {
+      throw new AppError(
+        `There is no timetable for this class in this ${payload.term}.`,
+        400
+      );
+    }
+
+    const findSubjectTimetable = actualExamTimeTable.scheduled_subjects.find(
+      (s) => s.subject_id.toString() === payload.subject_id.toString()
+    );
+
+    if (!findSubjectTimetable) {
+      throw new AppError(
+        `The time to write this subject exam is not taken care off in the timetable.`,
+        400
+      );
+    }
+
+    await ClassExamTimetable.updateOne(
+      {
+        academic_session_id: payload.session,
+        class_id: payload.class_id,
+        term: payload.term,
+        exam_id: payload.exam_id,
+        'scheduled_subjects.subject_id': payload.subject_id,
+      },
+      {
+        $pull: {
+          'scheduled_subjects.$.students_that_have_started': payload.student_id,
+        },
+        $addToSet: {
+          'scheduled_subjects.$.students_that_have_submitted':
+            payload.student_id,
+        },
+      },
+      { session }
+    );
+    await session.commitTransaction();
+    session.endSession();
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    throw error;
+  }
+};
+
 export {
+  processCbtAssessmentResultSubmission,
   processCbtAssessmentSubmission,
   processStudentExamResultUpdate,
   processStudentResultUpdate,
