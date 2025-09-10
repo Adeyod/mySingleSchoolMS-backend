@@ -122,6 +122,7 @@ export const registerCbtHandlers = (io: Server, socket: Socket) => {
 
   socket.on('submit-exam', async (payload, callback) => {
     try {
+      console.log('I am being called...');
       const { accessToken, cbt_result_id, exam_id, result_doc, trigger_type } =
         payload;
       if (!accessToken) {
