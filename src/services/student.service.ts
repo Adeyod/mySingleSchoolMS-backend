@@ -732,6 +732,9 @@ import Parent from '../models/parents.model';
 import { createNotificationMessage } from '../repository/notification.repository';
 import {
   capitalizeFirstLetter,
+  generateBankReference,
+  mySchoolDomain,
+  mySchoolName,
   schoolCityHandCoded,
   schoolCountryHandCoded,
   schoolNameHandCoded,
@@ -742,6 +745,7 @@ import { emailQueue } from '../utils/queue';
 import Class from '../models/class.model';
 import { schoolBusValidation } from '../utils/validation';
 import StudentAccount from '../models/student_account.model';
+import { createVirtualAccount } from '../utils/klazikschoolsCommunication/accounts';
 
 const fetchStudentById = async (
   student_id: string
@@ -1780,6 +1784,84 @@ const studentSessionSubscriptionUpdateByStudentOrParent = async (
   }
 };
 
+const studentAccountProvisioning = async (studentId: string) => {
+  try {
+    const studentExist = await Student.findById({
+      _id: studentId,
+    });
+
+    if (!studentExist) {
+      throw new AppError('Student not found.', 404);
+    }
+
+    const hasAccount = await StudentAccount.findOne({
+      student_id: studentExist._id,
+    });
+
+    if (hasAccount) {
+      throw new AppError('This student has account number already.', 400);
+    }
+
+    const input = {
+      student_id: studentExist._id,
+      first_name: studentExist.first_name,
+      last_name: studentExist.last_name,
+    };
+
+    const ref = generateBankReference(input);
+
+    const newAccount = new StudentAccount({
+      our_ref_to_bank: ref,
+      student_id: studentExist._id,
+    });
+
+    await newAccount.save();
+
+    const payload = {
+      student_id: studentExist._id.toString(),
+      first_name: studentExist.first_name,
+      last_name: studentExist.last_name,
+      account_name: `${studentExist.first_name} ${studentExist.last_name}`,
+      email: studentExist.email,
+      ref: ref,
+      school_name: mySchoolName,
+      domain_name: mySchoolDomain,
+    };
+    const createAccount = await createVirtualAccount(payload);
+
+    if (!createAccount) {
+      // i can do retry function here or i use queue for ubaCreateAccount function
+      throw new Error('Unable to create account');
+    }
+
+    const {
+      account_number,
+      account_name,
+      student_id,
+      customer_reference,
+      first_name,
+      last_name,
+      email,
+      ref: reference,
+    } = createAccount;
+
+    newAccount.customer_reference = customer_reference;
+    newAccount.account_number = account_number;
+    newAccount.account_name = account_name;
+
+    await newAccount.save();
+
+    return newAccount;
+  } catch (error) {
+    if (error instanceof AppError) {
+      throw new AppError(error.message, error.statusCode);
+    } else {
+      console.error(error);
+      throw new Error('Something went wrong');
+    }
+  }
+};
+
 // WE NEED TO ALLOW SCHOOL ADMIN TO BE ABLE TO HELP ANY STUDENT TO
 // SUBSCRIBE TO NEW SESSION SO AS TO CATER FOR THOSE THAT ARE NOT
 // TECH SAVVY. ALSO ON THE MODAL FOR ENROLLING RETURNING STUDENTS,
@@ -1787,6 +1869,7 @@ const studentSessionSubscriptionUpdateByStudentOrParent = async (
 // THAT ALLOW DOUBLE PROMOTION AND STUDENT TO REPEAT CLASS.
 
 export {
+  studentAccountProvisioning,
   fetchStudentsThatAreYetToSubscribedToNewSession,
   fetchNewStudentsThatHasNoClassEnrolmentBefore,
   fetchStudentsThatSubscribedToNewSession,

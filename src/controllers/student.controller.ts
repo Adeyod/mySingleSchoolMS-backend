@@ -371,6 +371,7 @@ import {
   studentSessionSubscriptionUpdateByAdmin,
   studentSessionSubscriptionUpdateByStudentOrParent,
   studentUpdateDetails,
+  studentAccountProvisioning,
 } from '../services/student.service';
 import { AppError, JoiError } from '../utils/app.error';
 import catchErrors from '../utils/tryCatch';
@@ -994,7 +995,54 @@ const getStudentsThatAreYetToSubscribedToNewSession = catchErrors(
   }
 );
 
+const provisionAccount = catchErrors(async (req, res) => {
+  // const start = Date.now();
+
+  const { student_id } = req.params;
+
+  if (!student_id) {
+    throw new AppError('Student ID is required.', 400);
+  }
+
+  const result = await studentAccountProvisioning(student_id);
+
+  if (!result) {
+    throw new AppError(
+      'Unable to provision account for this student at the moment.',
+      400
+    );
+  }
+
+  // const duration = Date.now() - start;
+
+  // const savelogPayload = {
+  //   level: 'info',
+  //   message: 'Students fetched successfully.',
+  //   service: 'klazik schools',
+  //   method: req.method,
+  //   route: req.originalUrl,
+  //   status_code: 200,
+  //   user_id: req.user?.userId,
+  //   user_role: req.user?.userRole,
+  //   ip: req.ip || 'unknown',
+  //   duration_ms: duration,
+  //   stack: undefined,
+  //   school_id: req.user?.school_id
+  //     ? new mongoose.Types.ObjectId(req.user.school_id)
+  //     : undefined,
+  // };
+
+  // await saveLog(savelogPayload);
+
+  return res.status(200).json({
+    message: 'Student account provisioned successfully.',
+    status: 200,
+    success: true,
+  });
+});
+
 export {
+  provisionAccount,
   getAStudentById,
   updateStudentDetails,
   getAllStudents,
