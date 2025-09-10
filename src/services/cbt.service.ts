@@ -1972,7 +1972,7 @@ const subjectCbtObjCbtAssessmentSubmission = async (
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
-    console.log('I am being called...');
+    console.log('I am being called 1...');
 
     const { cbt_result_id, exam_id, result_doc, student_id, trigger_type } =
       payload;
@@ -2014,6 +2014,7 @@ const subjectCbtObjCbtAssessmentSubmission = async (
         400
       );
     }
+    console.log('I am being called 1...');
 
     const current_time = Date.now();
     const start_time = new Date(result.obj_start_time).getTime();
@@ -2031,6 +2032,8 @@ const subjectCbtObjCbtAssessmentSubmission = async (
     if (current_time > finalSubmission) {
       throw new AppError(`Exam is over.`, 401);
     }
+
+    console.log('I am being called 1...');
 
     // START CHECKING TRIGGER TYPE HERE
     if (trigger_type === triggerTypeEnum[0]) {
@@ -2051,6 +2054,8 @@ const subjectCbtObjCbtAssessmentSubmission = async (
       result.obj_time_left = result.obj_time_left;
       result.obj_status = examStatusEnum[3];
     }
+
+    console.log('I am being called 1...');
 
     const questionMap = new Map(
       result.shuffled_obj_questions.map((q) => [q._id.toString(), q])
@@ -2079,6 +2084,8 @@ const subjectCbtObjCbtAssessmentSubmission = async (
       0
     );
 
+    console.log('I am being called 1...');
+
     const resultSettings = await ResultSetting.findOne({
       level: result.level,
     }).session(session);
@@ -2088,6 +2095,7 @@ const subjectCbtObjCbtAssessmentSubmission = async (
     }
 
     const exam_component_name = resultSettings?.exam_components.exam_name;
+    console.log('I am being called 1...');
 
     let objKeyName;
     let testName: string;
@@ -2120,6 +2128,7 @@ const subjectCbtObjCbtAssessmentSubmission = async (
     }
 
     const rawPercentage = (totalStudentScore / totalPossibleScore) * 100;
+    console.log('I am being called 1...');
 
     const maxObjectivePercent = objKeyName?.percentage; // we get this from the result settings of the school
     const convertedScore = totalPossibleScore
@@ -2133,6 +2142,7 @@ const subjectCbtObjCbtAssessmentSubmission = async (
 
     result.markModified('shuffled_obj_questions');
     await result.save({ session });
+    console.log('I am being called 1...');
 
     await session.commitTransaction();
     session.endSession();
@@ -2163,6 +2173,7 @@ const subjectCbtObjCbtAssessmentSubmission = async (
     };
 
     studentResultQueue.add(name, data, opts);
+    console.log('I am being called 1...');
 
     return result;
   } catch (error) {
