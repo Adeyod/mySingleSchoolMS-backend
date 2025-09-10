@@ -664,22 +664,22 @@ const submitSubjectCbtObjCbtAssessmentForAClass = catchErrors(
       },
     };
 
-    const respos = await subjectCbtObjCbtAssessmentSubmission(payload);
+    // const respos = await subjectCbtObjCbtAssessmentSubmission(payload);
 
-    if (!respos) {
-      throw new AppError('Unable to end and update Cbt assessment.', 400);
-    }
-    // const result = await studentResultQueue.add(name, data, opts);
-
-    // if (!result) {
+    // if (!respos) {
     //   throw new AppError('Unable to end and update Cbt assessment.', 400);
     // }
+    const result = await studentResultQueue.add(name, data, opts);
+
+    if (!result) {
+      throw new AppError('Unable to end and update Cbt assessment.', 400);
+    }
 
     return res.status(200).json({
       message: `Cbt assessment submitted successfully.`,
       status: 200,
       success: true,
-      questions: respos,
+      questions: result,
     });
   }
 );

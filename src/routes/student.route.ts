@@ -65,6 +65,13 @@ router.put(
   updateStudentDetails
 );
 
+// router.put(
+//   '/provision-account/:student_id',
+//   permission(['admin', 'super_admin']),
+//   uploadFile.single('image'),
+//   provisionAccounts
+// );
+
 router.get(
   '/get-all-student-using-class-level/:level',
   permission(['admin', 'super_admin']),
