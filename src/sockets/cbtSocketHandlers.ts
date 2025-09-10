@@ -147,18 +147,19 @@ export const registerCbtHandlers = (io: Server, socket: Socket) => {
         trigger_type,
       };
 
-      const name = 'cbt-assessment-submission';
+      // const name = 'cbt-assessment-submission';
       const data = fullPayload;
-      const opts = {
-        attempts: 5,
-        removeOnComplete: true,
-        backoff: {
-          type: 'exponential',
-          delay: 3000,
-        },
-      };
+      // const opts = {
+      //   attempts: 5,
+      //   removeOnComplete: true,
+      //   backoff: {
+      //     type: 'exponential',
+      //     delay: 3000,
+      //   },
+      // };
 
-      const result = await studentResultQueue.add(name, data, opts);
+      const result = await subjectCbtObjCbtAssessmentSubmission(data);
+      // const result = await studentResultQueue.add(name, data, opts);
       callback({ status: 'success', data: result });
     } catch (error) {
       callback({ status: 'error', message: error });

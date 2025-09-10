@@ -665,26 +665,39 @@ const submitSubjectCbtObjCbtAssessmentForAClass = catchErrors(
       },
     };
 
-    const job = await studentResultQueue.add(name, data, opts);
+    const result = await subjectCbtObjCbtAssessmentSubmission(data);
 
-    if (!job) {
+    if (!result) {
       throw new AppError('Unable to end and update Cbt assessment.', 400);
     }
 
-    const queueEvents = new QueueEvents('studentResultQueue');
-    try {
-      // Wait until worker finishes
-      const processedResult = await job.waitUntilFinished(queueEvents);
+    return res.status(200).json({
+      message: 'CBT assessment submitted successfully.',
+      status: 200,
+      success: true,
+      questions: result,
+    });
 
-      return res.status(200).json({
-        message: 'CBT assessment submitted successfully.',
-        status: 200,
-        success: true,
-        questions: processedResult, // <-- what your Worker returned
-      });
-    } catch (err) {
-      throw new AppError('Error processing CBT assessment.', 400);
-    }
+    //   const job = await studentResultQueue.add(name, data, opts);
+
+    // if (!job) {
+    //   throw new AppError('Unable to end and update Cbt assessment.', 400);
+    // }
+
+    // const queueEvents = new QueueEvents('studentResultQueue');
+    // try {
+    //   // Wait until worker finishes
+    //   const processedResult = await job.waitUntilFinished(queueEvents);
+
+    //   return res.status(200).json({
+    //     message: 'CBT assessment submitted successfully.',
+    //     status: 200,
+    //     success: true,
+    //     questions: processedResult, // <-- what your Worker returned
+    //   });
+    // } catch (err) {
+    //   throw new AppError('Error processing CBT assessment.', 400);
+    // }
   }
 );
 
