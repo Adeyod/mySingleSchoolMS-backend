@@ -24,6 +24,7 @@ import {
   joiValidateTimetableArray,
 } from '../utils/validation';
 import { studentResultQueue } from '../utils/queue';
+import { QueueEvents } from 'bullmq';
 // import { saveLog } from '../logs/log.service';
 
 const getCbtAssessmentDocumentById = catchErrors(async (req, res) => {
@@ -664,23 +665,26 @@ const submitSubjectCbtObjCbtAssessmentForAClass = catchErrors(
       },
     };
 
-    // const respos = await subjectCbtObjCbtAssessmentSubmission(payload);
+    const job = await studentResultQueue.add(name, data, opts);
 
-    // if (!respos) {
-    //   throw new AppError('Unable to end and update Cbt assessment.', 400);
-    // }
-    const result = await studentResultQueue.add(name, data, opts);
-
-    if (!result) {
+    if (!job) {
       throw new AppError('Unable to end and update Cbt assessment.', 400);
     }
 
-    return res.status(200).json({
-      message: `Cbt assessment submitted successfully.`,
-      status: 200,
-      success: true,
-      questions: result,
-    });
+    const queueEvents = new QueueEvents('studentResultQueue');
+    try {
+      // Wait until worker finishes
+      const processedResult = await job.waitUntilFinished(queueEvents);
+
+      return res.status(200).json({
+        message: 'CBT assessment submitted successfully.',
+        status: 200,
+        success: true,
+        questions: processedResult, // <-- what your Worker returned
+      });
+    } catch (err) {
+      throw new AppError('Error processing CBT assessment.', 400);
+    }
   }
 );
 
