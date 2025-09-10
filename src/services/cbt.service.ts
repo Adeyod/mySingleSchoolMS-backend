@@ -1972,6 +1972,8 @@ const subjectCbtObjCbtAssessmentSubmission = async (
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
+    console.log('I am being called...');
+
     const { cbt_result_id, exam_id, result_doc, student_id, trigger_type } =
       payload;
 

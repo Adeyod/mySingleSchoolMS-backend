@@ -159,6 +159,8 @@ export const registerCbtHandlers = (io: Server, socket: Socket) => {
       //   },
       // };
 
+      console.log('payload:', data);
+
       const result = await subjectCbtObjCbtAssessmentSubmission(data);
       // const result = await studentResultQueue.add(name, data, opts);
       callback({ status: 'success', data: result });
