@@ -1832,6 +1832,8 @@ const studentAccountProvisioning = async (studentId: string) => {
 
     const createAccount = await createVirtualAccount(payload);
 
+    console.log('createAccout:', createAccount);
+
     if (!createAccount) {
       // i can do retry function here or i use queue for ubaCreateAccount function
       throw new Error('Unable to create account');
