@@ -5,7 +5,7 @@ import {
   CreateVirtualAccountType,
 } from '../../constants/types';
 
-const klazikUrl = 'http://localhost:2500';
+const klazikUrl = process.env.KLAZIK_URL as string;
 
 const CLIENT_ID = process.env.KLAZIK_CLIENT_ID as string;
 const CLIENT_SECRET = process.env.KLAZIK_CLIENT_SECRET as string;
