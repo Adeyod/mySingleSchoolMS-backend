@@ -1827,6 +1827,7 @@ const studentAccountProvisioning = async (studentId: string) => {
       school_name: mySchoolName,
       domain_name: mySchoolDomain,
     };
+
     const createAccount = await createVirtualAccount(payload);
 
     if (!createAccount) {

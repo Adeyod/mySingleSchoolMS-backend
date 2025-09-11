@@ -74,8 +74,6 @@ const verifyAccessToken = async (
   try {
     const accessToken = req.headers['authorization']?.split(' ')[1];
 
-    console.log(accessToken);
-
     if (!accessToken) {
       throw new AppError('Please login to continue.', 401);
     }
