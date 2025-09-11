@@ -22,6 +22,7 @@ import {
   joiValidateQuestionArray,
   joiValidateExamInputFields,
   joiValidateTimetableArray,
+  joiValidateAssessmentDocumentArray,
 } from '../utils/validation';
 import { studentResultQueue } from '../utils/queue';
 import { QueueEvents } from 'bullmq';
@@ -71,68 +72,123 @@ const getAllCbtAssessmentDocument = catchErrors(async (req, res) => {
 const createTermCbtAssessmentDocument = catchErrors(async (req, res) => {
   console.log('req.body:', req.body);
   const { academic_session_id, term } = req.params;
-  const {
-    assessment_type,
-    number_of_questions_per_student,
-    min_obj_questions,
-    max_obj_questions,
-    expected_obj_number_of_options,
-  } = req.body;
+  const { assessment_document_array } = req.body;
+  // const {
+  //   assessment_type,
+  //   number_of_questions_per_student,
+  //   min_obj_questions,
+  //   max_obj_questions,
+  //   expected_obj_number_of_options,
+  //   level
+  // } = req.body;
 
   if (!academic_session_id) {
     throw new AppError('Academic session is required to proceed.', 400);
-  }
-
-  if (!assessment_type) {
-    throw new AppError('Assessment type is required to proceed.', 400);
   }
 
   if (!term) {
     throw new AppError('Academic session is required to proceed.', 400);
   }
 
-  const input = {
-    min_obj_questions,
-    max_obj_questions,
-    expected_obj_number_of_options,
-    assessment_type,
-    number_of_questions_per_student,
-  };
+  const validateInput = joiValidateAssessmentDocumentArray(
+    assessment_document_array
+  );
 
-  const validateTitle = joiValidateExamInputFields(input);
-
-  if (validateTitle.error) {
-    throw new AppError(validateTitle.error, 400);
+  if (validateInput.error) {
+    throw new AppError(validateInput.error, 400);
   }
 
-  const { success, value } = validateTitle;
+  const validAssessmentDocument = validateInput.value;
 
-  const payload = {
+  const input = {
     academic_session_id,
     term,
-    assessment_type: value.assessment_type,
-    min_obj_questions: value.min_obj_questions,
-    max_obj_questions: value.max_obj_questions,
-    expected_obj_number_of_options: value.expected_obj_number_of_options,
-    number_of_questions_per_student: value.number_of_questions_per_student,
+    assessmentDocumentArray: validAssessmentDocument,
   };
 
-  const result = await termCbtAssessmentDocumentCreation(payload);
+  const result = await termCbtAssessmentDocumentCreation(input);
 
   if (!result) {
     throw new AppError(
-      'Unable to create cbt assessment document for the term.',
+      'Unable to create cbt assessment documents for the term.',
       400
     );
   }
 
   return res.status(201).json({
-    message: 'Cbt assessment document created successfully.',
+    message: 'Cbt assessment documents created successfully.',
     status: 201,
     success: true,
     exam_document: result,
   });
 });
+
+// const createTermCbtAssessmentDocument = catchErrors(async (req, res) => {
+//   console.log('req.body:', req.body);
+//   const { academic_session_id, term } = req.params;
+//   const {
+//     assessment_type,
+//     number_of_questions_per_student,
+//     min_obj_questions,
+//     max_obj_questions,
+//     expected_obj_number_of_options,
+//     level
+//   } = req.body;
+
+//   if (!academic_session_id) {
+//     throw new AppError('Academic session is required to proceed.', 400);
+//   }
+
+//   if (!assessment_type) {
+//     throw new AppError('Assessment type is required to proceed.', 400);
+//   }
+
+//   if (!term) {
+//     throw new AppError('Academic session is required to proceed.', 400);
+//   }
+
+//   const input = {
+//     min_obj_questions,
+//     max_obj_questions,
+//     expected_obj_number_of_options,
+//     assessment_type,
+//     number_of_questions_per_student,
+//   };
+
+//   const validateTitle = joiValidateExamInputFields(input);
+
+//   if (validateTitle.error) {
+//     throw new AppError(validateTitle.error, 400);
+//   }
+
+//   const { success, value } = validateTitle;
+
+//   const payload = {
+//     academic_session_id,
+//     term,
+//     assessment_type: value.assessment_type,
+//     min_obj_questions: value.min_obj_questions,
+//     max_obj_questions: value.max_obj_questions,
+//     expected_obj_number_of_options: value.expected_obj_number_of_options,
+//     number_of_questions_per_student: value.number_of_questions_per_student,
+//   };
+
+//   const result = await termCbtAssessmentDocumentCreation(payload);
+
+//   if (!result) {
+//     throw new AppError(
+//       'Unable to create cbt assessment document for the term.',
+//       400
+//     );
+//   }
+
+//   return res.status(201).json({
+//     message: 'Cbt assessment document created successfully.',
+//     status: 201,
+//     success: true,
+//     exam_document: result,
+//   });
+// });
 
 const getTermCbtAssessmentDocument = catchErrors(async (req, res) => {
   // const start = Date.now();

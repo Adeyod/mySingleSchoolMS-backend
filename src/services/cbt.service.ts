@@ -18,6 +18,7 @@ import {
   UserDocument,
   ExamScoreType,
   ScoreType,
+  CbtAssessmentDocumentArrayType,
 } from '../constants/types';
 import CbtCutoff from '../models/cbt_cutoffs.model';
 import CbtExam from '../models/cbt_exam.model';
@@ -44,18 +45,10 @@ import { SubjectResult } from '../models/subject_result.model';
 import { studentResultQueue } from '../utils/queue';
 
 const termCbtAssessmentDocumentCreation = async (
-  payload: CbtAssessmentDocumentCreationType
+  payload: CbtAssessmentDocumentArrayType
 ) => {
   try {
-    const {
-      academic_session_id,
-      term,
-      assessment_type,
-      min_obj_questions,
-      max_obj_questions,
-      expected_obj_number_of_options,
-      number_of_questions_per_student,
-    } = payload;
+    const { academic_session_id, term, assessmentDocumentArray } = payload;
 
     const academicSessionExist = await Session.findById(academic_session_id);
 
@@ -79,49 +72,35 @@ const termCbtAssessmentDocumentCreation = async (
       );
     }
 
-    const existingActiveAssessmentDocument = await CbtExam.find({
-      academic_session_id: academic_session_id,
-      term: term,
-      is_active: true,
-    });
+    for (const assessment_doc of assessmentDocumentArray) {
+      const exists = await CbtExam.findOne({
+        term,
+        level: assessment_doc.level,
+        assessment_type: assessment_doc.assessment_type,
+      });
 
-    if (existingActiveAssessmentDocument.length > 0) {
-      await CbtExam.updateMany(
-        {
-          academic_session_id: academic_session_id,
-          term: term,
-          is_active: true,
-        },
-        { $set: { is_active: false } }
-      );
+      if (exists) {
+        throw new AppError(
+          `Assessment type "${assessment_doc.assessment_type}" already exists for level "${assessment_doc.level}" in ${term}.`,
+          400
+        );
+      }
     }
 
-    const examDocExist = await CbtExam.findOne({
-      academic_session_id: academic_session_id,
-      term: term,
-      assessment_type: assessment_type.toLowerCase().trim(),
-    });
-
-    if (examDocExist) {
-      throw new AppError(
-        `${assessment_type} document already created in this term.`,
-        400
-      );
-    }
-
-    const newExamDoc = new CbtExam({
-      academic_session_id: academic_session_id,
-      term: term,
-      assessment_type: assessment_type.toLowerCase(),
-      min_obj_questions: min_obj_questions,
-      max_obj_questions: max_obj_questions,
-      number_of_questions_per_student: number_of_questions_per_student,
-      expected_obj_number_of_options: expected_obj_number_of_options,
-    });
-
-    await newExamDoc.save();
-
-    return newExamDoc;
+    const createDocs = await CbtExam.insertMany(
+      assessmentDocumentArray.map((doc) => ({
+        term: term,
+        academic_session_id: academic_session_id,
+        level: doc.level,
+        max_obj_questions: doc.max_obj_questions,
+        min_obj_questions: doc.min_obj_questions,
+        number_of_questions_per_student: doc.number_of_questions_per_student,
+        expected_obj_number_of_options: doc.expected_obj_number_of_options,
+        assessment_type: doc.assessment_type.trim().toLowerCase(),
+        is_active: true,
+      }))
+    );
+    return createDocs;
   } catch (error) {
     if (error instanceof AppError) {
       throw new AppError(`${error.message}`, 400);
@@ -2012,13 +1991,13 @@ const subjectCbtObjCbtAssessmentSubmission = async (
     const notStarted = result.obj_status === examStatusEnum[0];
     const isSubmitted = result.obj_status === examStatusEnum[2];
     // I WILL UNCOMMENT LATER
-    // if (notStarted || isSubmitted) {
-    //   console.log('result.obj_status:', result.obj_status);
-    //   throw new AppError(
-    //     'This subject exam is not in-progress. It is either completed or ended.',
-    //     400
-    //   );
-    // }
+    if (notStarted || isSubmitted) {
+      console.log('result.obj_status:', result.obj_status);
+      throw new AppError(
+        'This subject exam is not in-progress. It is either completed or ended.',
+        400
+      );
+    }
     console.log('I am being called 2...');
 
     const current_time = Date.now();
@@ -2035,9 +2014,9 @@ const subjectCbtObjCbtAssessmentSubmission = async (
     }
 
     // I WILL UNCOMMENT LATER
-    // if (current_time > finalSubmission) {
-    //   throw new AppError(`Exam is over.`, 401);
-    // }
+    if (current_time > finalSubmission) {
+      throw new AppError(`Exam is over.`, 401);
+    }
 
     console.log('I am being called 3...');
 
@@ -2105,7 +2084,10 @@ const subjectCbtObjCbtAssessmentSubmission = async (
 
     let objKeyName;
     let testName: string;
-    if (examDocExist.assessment_type !== exam_component_name) {
+    if (
+      examDocExist.assessment_type.trim().toLowerCase() !==
+      exam_component_name.trim().toLowerCase()
+    ) {
       // do for test
       objKeyName = resultSettings.components?.find(
         (k) =>
@@ -2123,7 +2105,9 @@ const subjectCbtObjCbtAssessmentSubmission = async (
       // do for exam
       const exam_components = resultSettings?.exam_components.component;
 
-      objKeyName = exam_components?.find((k) => k.key === examKeyEnum[0]);
+      objKeyName = exam_components?.find(
+        (k) => k.key.trim().toLowerCase() === examKeyEnum[0]
+      );
 
       if (!objKeyName?.percentage || !objKeyName?.name) {
         throw new AppError(
@@ -2334,6 +2318,95 @@ const theoryQestionSetting = async (
     }
   }
 };
+
+// const termCbtAssessmentDocumentCreation = async (
+//   payload: CbtAssessmentDocumentCreationType
+// ) => {
+//   try {
+//     const {
+//       academic_session_id,
+//       term,
+//       assessment_type,
+//       min_obj_questions,
+//       max_obj_questions,
+//       expected_obj_number_of_options,
+//       number_of_questions_per_student,
+//     } = payload;
+
+//     const academicSessionExist = await Session.findById(academic_session_id);
+
+//     if (!academicSessionExist) {
+//       throw new AppError(
+//         `Academic session with id: ${academic_session_id} does not exist.`,
+//         404
+//       );
+//     }
+
+//     const termExist = academicSessionExist.terms.find((t) => t.name === term);
+
+//     if (!termExist) {
+//       throw new AppError(`${term} does not exist.`, 404);
+//     }
+
+//     if (termExist && termExist.is_active !== true) {
+//       throw new AppError(
+//         `${term} has ended and exam document can not be created for a term that has ended.`,
+//         403
+//       );
+//     }
+
+//     const existingActiveAssessmentDocument = await CbtExam.find({
+//       academic_session_id: academic_session_id,
+//       term: term,
+//       is_active: true,
+//     });
+
+//     if (existingActiveAssessmentDocument.length > 0) {
+//       await CbtExam.updateMany(
+//         {
+//           academic_session_id: academic_session_id,
+//           term: term,
+//           is_active: true,
+//         },
+//         { $set: { is_active: false } }
+//       );
+//     }
+
+//     const examDocExist = await CbtExam.findOne({
+//       academic_session_id: academic_session_id,
+//       term: term,
+//       assessment_type: assessment_type.toLowerCase().trim(),
+//     });
+
+//     if (examDocExist) {
+//       throw new AppError(
+//         `${assessment_type} document already created in this term.`,
+//         400
+//       );
+//     }
+
+//     const newExamDoc = new CbtExam({
+//       academic_session_id: academic_session_id,
+//       term: term,
+//       assessment_type: assessment_type.toLowerCase(),
+//       min_obj_questions: min_obj_questions,
+//       max_obj_questions: max_obj_questions,
+//       number_of_questions_per_student: number_of_questions_per_student,
+//       expected_obj_number_of_options: expected_obj_number_of_options,
+//     });
+
+//     await newExamDoc.save();
+
+//     return newExamDoc;
+//   } catch (error) {
+//     if (error instanceof AppError) {
+//       throw new AppError(`${error.message}`, 400);
+//     } else {
+//       console.error(error);
+//       throw new Error('Something went wrong');
+//     }
+//   }
+// };
 
 export {
   subjectCbtObjCbtAssessmentRemainingTimeUpdate,

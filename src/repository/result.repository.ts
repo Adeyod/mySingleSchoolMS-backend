@@ -988,11 +988,15 @@ const processCbtAssessmentResultSubmission = async (
     let examObj: ExamScoreType | null = null;
     let testObj: ScoreType | null = null;
 
-    if (examDocExist.assessment_type !== exam_component_name) {
+    if (
+      examDocExist.assessment_type.trim().toLowerCase() !==
+      exam_component_name.trim().toLowerCase()
+    ) {
       // do for test
       objKeyName = resultSettings.components?.find(
         (k) =>
-          k.name.toLowerCase() === examDocExist.assessment_type.toLowerCase()
+          k.name.trim().toLowerCase() ===
+          examDocExist.assessment_type.trim().toLowerCase()
       );
 
       if (!objKeyName?.percentage || !objKeyName?.name) {
@@ -1021,7 +1025,9 @@ const processCbtAssessmentResultSubmission = async (
       };
 
       const hasRecordedExamScore = termResult?.scores.find(
-        (s) => s.score_name.toLowerCase() === testObj?.score_name.toLowerCase()
+        (s) =>
+          s.score_name.trim().toLowerCase() ===
+          testObj?.score_name.trim().toLowerCase()
       );
 
       console.log('hasRecordedExamScore:', hasRecordedExamScore);
@@ -1040,7 +1046,9 @@ const processCbtAssessmentResultSubmission = async (
 
       const exam_components = resultSettings?.exam_components.component;
 
-      objKeyName = exam_components?.find((k) => k.key === examKeyEnum[0]);
+      objKeyName = exam_components?.find(
+        (k) => k.key.trim().toLowerCase() === examKeyEnum[0]
+      );
 
       if (!objKeyName?.percentage || !objKeyName?.name) {
         throw new AppError(
@@ -1067,7 +1075,9 @@ const processCbtAssessmentResultSubmission = async (
       };
 
       const hasRecordedExamScore = termResult?.exam_object.find(
-        (s) => s.score_name.toLowerCase() === examObj?.score_name.toLowerCase()
+        (s) =>
+          s.score_name.trim().toLowerCase() ===
+          examObj?.score_name.trim().toLowerCase()
       );
       if (hasRecordedExamScore) {
         console.log(
@@ -1125,7 +1135,8 @@ const processCbtAssessmentResultSubmission = async (
           if (testObj) {
             const hasTest = mainSubjectResult.scores.find(
               (s) =>
-                s.score_name.toLowerCase() === testObj.score_name.toLowerCase()
+                s.score_name.trim().toLowerCase() ===
+                testObj.score_name.trim().toLowerCase()
             );
             if (!hasTest) {
               mainSubjectResult.scores.push(testObj);
@@ -1135,7 +1146,8 @@ const processCbtAssessmentResultSubmission = async (
           if (examObj) {
             const hasExam = mainSubjectResult.exam_object.find(
               (s) =>
-                s.score_name.toLowerCase() === examObj.score_name.toLowerCase()
+                s.score_name.trim().toLowerCase() ===
+                examObj.score_name.trim().toLowerCase()
             );
             if (!hasExam) {
               mainSubjectResult.exam_object.push(examObj);

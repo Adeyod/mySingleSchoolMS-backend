@@ -2330,12 +2330,17 @@ type AccessModeType = 'any' | 'all';
 
 type CbtAssessmentDocumentCreationType = {
   assessment_type: string;
-  academic_session_id: string;
-  term: string;
+  level: string;
   min_obj_questions: number;
   expected_obj_number_of_options: number;
   max_obj_questions: number;
   number_of_questions_per_student: number;
+};
+
+type CbtAssessmentDocumentArrayType = {
+  academic_session_id: string;
+  term: string;
+  assessmentDocumentArray: CbtAssessmentDocumentCreationType[];
 };
 
 type CbtAssessmentDocument = {
@@ -2343,6 +2348,7 @@ type CbtAssessmentDocument = {
   // school: mongoose.Types.ObjectId;
   academic_session_id: mongoose.Types.ObjectId;
   term: string;
+  level: string;
   assessment_type: string;
   min_obj_questions: number;
   expected_obj_number_of_options: number;
@@ -2360,6 +2366,15 @@ type ObjQuestionType = {
   options: string[];
   correct_answer: string;
   score: number;
+};
+
+type AssessmentDocumentType = {
+  assessment_type: string;
+  number_of_questions_per_student: number;
+  min_obj_questions: number;
+  max_obj_questions: number;
+  expected_obj_number_of_options: number;
+  level: string;
 };
 
 type TimetableArrayType = {
@@ -2810,6 +2825,7 @@ export {
   CbtAssessmentDocument,
   CbtAssessmentDocumentCreationType,
   AccessModeType,
+  AssessmentDocumentType,
   FeatureKeyType,
   CbtAssessmentResultType,
   ContactUsType,
@@ -2829,6 +2845,7 @@ export {
   OptionalFeeType,
   SubjectRemovalType,
   SubjectResultDocument,
+  CbtAssessmentDocumentArrayType,
   SubjectAdditionType,
   MandatoryFeeType,
   StudentWalletObjType,

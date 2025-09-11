@@ -9,6 +9,7 @@ const cbtExamSchema = new mongoose.Schema<CbtAssessmentDocument>(
       required: true,
     },
     term: { type: String, required: true },
+    level: { type: String, required: true },
     min_obj_questions: { type: Number, required: true },
     max_obj_questions: { type: Number, required: true },
     number_of_questions_per_student: { type: Number, required: true },

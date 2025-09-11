@@ -610,6 +610,7 @@ import {
   CbtAssessmentInputFieldsType,
   TimetableArrayType,
   CbtCutoffPayload,
+  AssessmentDocumentType,
 } from '../constants/types';
 import { JoiError } from './app.error';
 
@@ -1439,12 +1440,56 @@ const joiValidateQuestionArray = (
   error?: string;
 } => {
   const schema = Joi.array().items(singleQuestionSchema).min(1).required();
+
   const { error, value } = schema.validate(payload);
   if (error) {
     return { success: false, error: error.details[0].message };
   }
   return { success: true, value };
 };
+
+const joiValidateAssessmentDocumentArray = (
+  payload: AssessmentDocumentType[]
+): {
+  success: boolean;
+  value?: any;
+  error?: string;
+} => {
+  const schema = Joi.array()
+    .items(singleAssessmentDocumentSchema)
+    .min(1)
+    .required()
+    .custom((value: AssessmentDocumentType[], helpers) => {
+      const levels = value.map((v) => v.level);
+      const duplicates = levels.filter(
+        (lvl, idx) => levels.indexOf(lvl) !== idx
+      );
+
+      if (duplicates.length > 0) {
+        return helpers.error('any.invalid', {
+          message: `Duplicate level(s) found: ${[...new Set(duplicates)].join(
+            ', '
+          )}`,
+        });
+      }
+
+      return value;
+    });
+  const { error, value } = schema.validate(payload);
+  if (error) {
+    return { success: false, error: error.details[0].message };
+  }
+  return { success: true, value };
+};
+
+const singleAssessmentDocumentSchema = Joi.object({
+  assessment_type: Joi.string().trim().required(),
+  number_of_questions_per_student: Joi.number().required(),
+  min_obj_questions: Joi.number().required(),
+  max_obj_questions: Joi.number().required(),
+  expected_obj_number_of_options: Joi.number().required(),
+  level: Joi.string().trim().required(),
+});
 
 const singleTimetableSchema = Joi.object({
   subject_id: Joi.string().trim().required(),
@@ -1487,6 +1532,7 @@ const joiValidateCutoffs = (
 };
 
 export {
+  joiValidateAssessmentDocumentArray,
   joiValidateCutoffs,
   joiValidateTimetableArray,
   joiValidateQuestionArray,
