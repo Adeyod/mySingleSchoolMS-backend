@@ -1790,6 +1790,8 @@ const studentAccountProvisioning = async (studentId: string) => {
       _id: studentId,
     });
 
+    console.log('student account provisioning service is running...');
+
     if (!studentExist) {
       throw new AppError('Student not found.', 404);
     }

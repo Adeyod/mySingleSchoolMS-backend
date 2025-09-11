@@ -998,6 +998,8 @@ const getStudentsThatAreYetToSubscribedToNewSession = catchErrors(
 const provisionAccount = catchErrors(async (req, res) => {
   // const start = Date.now();
 
+  console.log('provision account controller is running...');
+
   const { student_id } = req.params;
 
   if (!student_id) {
