@@ -70,17 +70,8 @@ const getAllCbtAssessmentDocument = catchErrors(async (req, res) => {
 });
 
 const createTermCbtAssessmentDocument = catchErrors(async (req, res) => {
-  console.log('req.body:', req.body);
   const { academic_session_id, term } = req.params;
   const { assessment_document_array } = req.body;
-  // const {
-  //   assessment_type,
-  //   number_of_questions_per_student,
-  //   min_obj_questions,
-  //   max_obj_questions,
-  //   expected_obj_number_of_options,
-  //   level
-  // } = req.body;
 
   if (!academic_session_id) {
     throw new AppError('Academic session is required to proceed.', 400);
