@@ -105,7 +105,7 @@ app.use('/api/v1/cbt', cbtRoute);
 app.use('/api/v1/non-teaching', nonTeachingRoute);
 app.use('/api/v1/notifications', notificationRoute);
 app.use('/api/v1/super-admin', superAdminRoute);
-app.use('/api/v1/accounts', klazikRoute);
+app.use('/api/accounts', klazikRoute);
 app.use('/api/v1/school', schoolRoute);
 
 app.use('/admin/queues', serverAdapter.getRouter());

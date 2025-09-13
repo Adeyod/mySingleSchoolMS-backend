@@ -707,7 +707,28 @@ const generateBankReference = (payload: GenerateBankReferenceType): string => {
   return ref;
 };
 
+const canonicalize = (obj: Record<string, any>) => {
+  return JSON.stringify(
+    Object.keys(obj)
+      .sort()
+      .reduce((acc, key) => {
+        acc[key] = obj[key];
+        return acc;
+      }, {} as Record<string, any>)
+  );
+};
+
+const normalizeAmount = (amount: string | number) => {
+  if (typeof amount === 'number') {
+    return amount;
+  } else {
+    return parseFloat(amount.replace(/,/g, ''));
+  }
+};
+
 export {
+  normalizeAmount,
+  canonicalize,
   generateBankReference,
   mySchoolName,
   mySchoolDomain,

@@ -2791,7 +2791,43 @@ type StudentUpdateDetailsReturnType = UserWithoutPassword & {
   studentAccountDetails: StudentAccountDocumentType;
 };
 
+type CreditAccountPayloadType = {
+  type: string;
+  student_email: string;
+  sessionID: string;
+  nameEnquiryRef: string;
+  beneficiaryAccountName: string;
+  beneficiaryAccountNumber: string;
+  originatorAccountName: string;
+  originatorAccountNumber: string;
+  narration: string;
+  paymentReference: string;
+  status: string;
+  amount: string;
+  collectionAccountNumber: string;
+};
+
+type TransactionDocument = {
+  account: string;
+  student: string;
+  type: 'credit' | 'debit';
+  amount: number;
+  narration: string;
+  merchant_account_credited: string;
+  status: 'pending' | 'success' | 'failed';
+  payment_reference: string;
+  party: {
+    name: string;
+    account_number: string;
+    role: 'sender' | 'beneficiary';
+  };
+  balance_after: number;
+  channel: 'webhook' | 'manual' | 'fee_payment' | 'transfer';
+};
+
 export {
+  TransactionDocument,
+  CreditAccountPayloadType,
   StudentUpdateDetailsReturnType,
   GenerateBankReferenceType,
   AccountCreationReturnType,

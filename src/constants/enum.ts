@@ -136,7 +136,19 @@ const triggerTypeEnum = ['manual', 'time_up', 'cutoff'];
 
 const examKeyEnum = ['obj', 'theory'];
 
+const partyRoleEnum = ['sender', 'beneficiary'];
+
+const transactionStatusEnum = ['pending', 'success', 'failed'] as const;
+
+const transactionTypeEnum = ['credit', 'debit'];
+
+const transactionChannelEnum = ['webhook', 'manual', 'fee_payment', 'transfer'];
+
 export {
+  partyRoleEnum,
+  transactionChannelEnum,
+  transactionStatusEnum,
+  transactionTypeEnum,
   examKeyEnum,
   triggerTypeEnum,
   examStatusEnum,

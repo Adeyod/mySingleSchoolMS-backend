@@ -4,6 +4,7 @@ import {
   AccountCreationReturnType,
   CreateVirtualAccountType,
 } from '../../constants/types';
+import { canonicalize } from '../functions';
 
 const klazikUrl = process.env.KLAZIK_URL as string;
 
@@ -13,17 +14,6 @@ const API_KEY = process.env.KLAZIK_API_KEY as string;
 
 if (!CLIENT_SECRET || !CLIENT_ID || !API_KEY) {
   throw new Error('Missing required environment variables for authentication');
-}
-
-function canonicalize(obj: Record<string, any>) {
-  return JSON.stringify(
-    Object.keys(obj)
-      .sort()
-      .reduce((acc, key) => {
-        acc[key] = obj[key];
-        return acc;
-      }, {} as Record<string, any>)
-  );
 }
 
 const createVirtualAccount = async (
